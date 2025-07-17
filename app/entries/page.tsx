@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
 import { Plus, Search, Filter, Calendar, MapPin, Star, Edit, Trash2, AlertTriangle, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { IPhoto } from '@/models/JournalEntry';
 
 interface Entry {
   _id: string;
@@ -20,7 +21,7 @@ interface Entry {
   };
   rating: number;
   tags: string[];
-  photos: any[];
+  photos: IPhoto[];
 }
 
 export default function EntriesPage() {
@@ -35,13 +36,7 @@ export default function EntriesPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<Entry | null>(null);
 
-  useEffect(() => {
-    if (isSignedIn) {
-      fetchEntries();
-    }
-  }, [isSignedIn, search, difficulty, page]);
-
-  const fetchEntries = async () => {
+  const fetchEntries = useCallback(async () => {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -61,7 +56,13 @@ export default function EntriesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, difficulty, page]);
+
+  useEffect(() => {
+    if (isSignedIn) {
+      fetchEntries();
+    }
+  }, [isSignedIn, fetchEntries]);
 
   const handleDeleteClick = (entry: Entry) => {
     setEntryToDelete(entry);
@@ -76,7 +77,7 @@ export default function EntriesPage() {
 
     // Show a beautiful toast before confirmation
     const toastId = toast.loading(
-      `Preparing to delete "${entryTitle}"...`,
+      `Preparing to delete &quot;${entryTitle}&quot;...`,
       {
         style: {
           background: '#3b82f6',
@@ -109,7 +110,7 @@ export default function EntriesPage() {
         setEntries(entries.filter(entry => entry._id !== entryId));
         
         // Show success toast
-        toast.success(`"${entryTitle}" has been deleted successfully!`, {
+        toast.success(`&quot;${entryTitle}&quot; has been deleted successfully!`, {
           duration: 4000,
           style: {
             background: '#10b981',
@@ -397,7 +398,7 @@ export default function EntriesPage() {
             
             <div className="mb-6">
               <p className="text-gray-600">
-                Are you sure you want to delete <span className="font-semibold text-gray-900">"{entryToDelete.title}"</span>? 
+                Are you sure you want to delete <span className="font-semibold text-gray-900">&quot;{entryToDelete.title}&quot;</span>? 
                 This action cannot be undone.
               </p>
             </div>

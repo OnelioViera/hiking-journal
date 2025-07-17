@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import EntryForm from '@/components/forms/EntryForm';
 import { use } from 'react';
+import { IPhoto } from '@/models/JournalEntry';
 
 interface Entry {
   _id: string;
@@ -15,11 +15,7 @@ interface Entry {
   date: string;
   location: {
     name: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
-    };
-    elevation?: number;
+    elevation?: string;
   };
   trail: {
     name?: string;
@@ -34,15 +30,14 @@ interface Entry {
     windSpeed?: number;
     humidity?: number;
   };
-  tags: string[];
   rating: number;
+  tags: string[];
+  photos: IPhoto[];
   privacy: string;
-  photos: any[];
 }
 
 export default function EditEntryPage({ params }: { params: Promise<{ id: string }> }) {
   const { isSignedIn, isLoaded } = useAuth();
-  const router = useRouter();
   const [entry, setEntry] = useState<Entry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,13 +45,7 @@ export default function EditEntryPage({ params }: { params: Promise<{ id: string
   // Unwrap the params promise
   const { id } = use(params);
 
-  useEffect(() => {
-    if (isSignedIn) {
-      fetchEntry();
-    }
-  }, [isSignedIn, id]);
-
-  const fetchEntry = async () => {
+  const fetchEntry = useCallback(async () => {
     try {
       const response = await fetch(`/api/entries/${id}`);
       if (response.ok) {
@@ -73,7 +62,13 @@ export default function EditEntryPage({ params }: { params: Promise<{ id: string
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (isSignedIn) {
+      fetchEntry();
+    }
+  }, [isSignedIn, fetchEntry]);
 
   if (!isLoaded) {
     return (
@@ -160,7 +155,7 @@ export default function EditEntryPage({ params }: { params: Promise<{ id: string
         </div>
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Entry not found</h2>
-          <p className="text-gray-600 mb-6">The entry you're looking for doesn't exist or has been deleted.</p>
+          <p className="text-gray-600 mb-6">The entry you&apos;re looking for doesn&apos;t exist or has been deleted.</p>
           <Link
             href="/entries"
             className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"

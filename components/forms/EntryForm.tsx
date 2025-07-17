@@ -2,24 +2,47 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, MapPin, Mountain, Cloud, Tag, Star, Upload, X, Camera } from 'lucide-react';
+import { MapPin, Mountain, Cloud, Tag, Star, Upload, X, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { IPhoto } from '@/models/JournalEntry';
+import Image from 'next/image';
 
-interface Photo {
-  url: string;
-  publicId: string;
-  caption?: string;
-  timestamp: Date;
+interface EntryFormEntry {
+  _id?: string;
+  title: string;
+  description: string;
+  date: string;
+  location: {
+    name: string;
+    elevation?: string;
+  };
+  trail: {
+    name?: string;
+    difficulty: string;
+    distance?: string | number;
+    duration?: string | number;
+    elevationGain?: string | number;
+  };
+  weather: {
+    temperature?: string | number;
+    conditions?: string;
+    windSpeed?: string | number;
+    humidity?: string | number;
+  };
+  tags: string[];
+  rating: number;
+  privacy: string;
+  photos: IPhoto[];
 }
 
 interface EntryFormProps {
-  entry?: any;
+  entry?: EntryFormEntry;
 }
 
 export default function EntryForm({ entry }: EntryFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [photos, setPhotos] = useState<Photo[]>(entry?.photos || []);
+  const [photos, setPhotos] = useState<IPhoto[]>(entry?.photos || []);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [formData, setFormData] = useState({
     title: entry?.title || '',
@@ -51,7 +74,7 @@ export default function EntryForm({ entry }: EntryFormProps) {
   useEffect(() => {
     console.log('EntryForm mounted with entry:', entry);
     console.log('Form data initialized:', formData);
-  }, []);
+  }, [entry, formData]);
 
   const handleFileUpload = async (files: FileList) => {
     setUploadingPhotos(true);
@@ -94,7 +117,7 @@ export default function EntryForm({ entry }: EntryFormProps) {
     });
 
     const uploadedPhotos = await Promise.all(uploadPromises);
-    const validPhotos = uploadedPhotos.filter(photo => photo !== null) as Photo[];
+    const validPhotos = uploadedPhotos.filter(photo => photo !== null) as IPhoto[];
     
     setPhotos(prev => [...prev, ...validPhotos]);
     setUploadingPhotos(false);
@@ -335,10 +358,13 @@ export default function EntryForm({ entry }: EntryFormProps) {
               {photos.map((photo, index) => (
                 <div key={index} className="relative group">
                   <div className="aspect-square rounded-lg overflow-hidden border">
-                    <img
+                    <Image
                       src={photo.url}
                       alt={`Photo ${index + 1}`}
                       className="w-full h-full object-cover"
+                      width={400}
+                      height={400}
+                      unoptimized
                     />
                   </div>
                   <button

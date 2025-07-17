@@ -40,7 +40,7 @@ export const uploadImage = async (file: Buffer, folder: string = 'hiking-journal
 
 export const deleteImage = async (publicId: string): Promise<void> => {
   return new Promise((resolve, reject) => {
-    cloudinary.uploader.destroy(publicId, (error, result) => {
+    cloudinary.uploader.destroy(publicId, (error) => {
       if (error) {
         reject(error);
       } else {

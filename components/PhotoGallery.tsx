@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 
 interface Photo {
   url: string;
@@ -80,10 +81,13 @@ export default function PhotoGallery({ photos, isOpen, onClose, initialIndex = 0
 
       {/* Main Image */}
       <div className="relative max-w-4xl max-h-full mx-4">
-        <img
+        <Image
           src={currentPhoto.url}
           alt={currentPhoto.caption || `Photo ${currentIndex + 1}`}
           className="max-w-full max-h-full object-contain"
+          width={1200}
+          height={900}
+          unoptimized
         />
         
         {/* Photo Info */}
@@ -114,10 +118,13 @@ export default function PhotoGallery({ photos, isOpen, onClose, initialIndex = 0
                   : 'border-transparent hover:border-gray-400'
               }`}
             >
-              <img
+              <Image
                 src={photo.url}
                 alt={`Thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
+                width={64}
+                height={64}
+                unoptimized
               />
             </button>
           ))}

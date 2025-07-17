@@ -19,13 +19,17 @@ export async function GET(request: NextRequest) {
     const difficulty = searchParams.get('difficulty') || '';
     const tags = searchParams.get('tags') || '';
 
-    const query: any = { userId };
-    
+    const skip = (page - 1) * limit;
+
+    // Build query
+    const query: Record<string, unknown> = { userId };
+
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
-        { 'location.name': { $regex: search, $options: 'i' } }
+        { 'location.name': { $regex: search, $options: 'i' } },
+        { tags: { $regex: search, $options: 'i' } }
       ];
     }
 
@@ -40,11 +44,12 @@ export async function GET(request: NextRequest) {
 
     const entries = await JournalEntry.find(query)
       .sort({ date: -1 })
-      .skip((page - 1) * limit)
+      .skip(skip)
       .limit(limit)
       .populate('userId', 'name email');
 
     const total = await JournalEntry.countDocuments(query);
+    const pages = Math.ceil(total / limit);
 
     return NextResponse.json({
       entries,
@@ -52,7 +57,7 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
+        pages
       }
     });
   } catch (error) {

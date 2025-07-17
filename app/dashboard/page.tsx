@@ -3,7 +3,8 @@
 import { useAuth, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { Mountain, Calendar, MapPin, TrendingUp, Camera } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { IPhoto } from '@/models/JournalEntry';
 
 interface Entry {
   _id: string;
@@ -19,7 +20,7 @@ interface Entry {
   };
   rating: number;
   tags: string[];
-  photos: any[];
+  photos: IPhoto[];
 }
 
 export default function DashboardPage() {
@@ -27,20 +28,19 @@ export default function DashboardPage() {
   const { user } = useUser();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<{
+    totalHikes: number;
+    thisMonth: number;
+    totalDistance: number;
+    totalPhotos: number;
+  }>({
     totalHikes: 0,
     thisMonth: 0,
     totalDistance: 0,
     totalPhotos: 0
   });
 
-  useEffect(() => {
-    if (isSignedIn) {
-      fetchDashboardData();
-    }
-  }, [isSignedIn]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       const response = await fetch('/api/entries?limit=100');
       if (response.ok) {
@@ -53,7 +53,13 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isSignedIn) {
+      fetchDashboardData();
+    }
+  }, [isSignedIn, fetchDashboardData]);
 
   const calculateStats = (entries: Entry[]) => {
     const now = new Date();
@@ -124,7 +130,7 @@ export default function DashboardPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
         <p className="text-gray-600">
-          Welcome back, {user?.firstName || user?.emailAddresses?.[0]?.emailAddress}! Here's your hiking progress.
+          Welcome back, {user?.firstName || user?.emailAddresses?.[0]?.emailAddress}! Here&apos;s your hiking progress.
         </p>
       </div>
 

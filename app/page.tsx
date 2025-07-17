@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Mountain, Camera, MapPin, BarChart3, Users, Calendar } from 'lucide-react';
 import { SignInButton, useAuth } from '@clerk/nextjs';
+import Image from 'next/image';
 
 export default function HomePage() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -13,10 +14,12 @@ export default function HomePage() {
       <section className="relative bg-gradient-to-br from-green-50 to-blue-50 py-20 overflow-hidden">
         {/* Hero Background Image */}
         <div className="absolute inset-0 z-0">
-          <img
-            src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+          <Image
+            src="https://images.unsplash.com/photo-1464822759023fed622ff2c3?ixlib=rb-4.03&ixid=M3wxMjA3fDB8MHxwaG90y1wYWdlfHx8fGVufDB8fHx8fA%33&auto=format&fit=crop&w=2070&q=80"
             alt="Mountain landscape"
             className="w-full h-full object-cover opacity-20"
+            fill
+            unoptimized
           />
           <div className="absolute inset-0 bg-gradient-to-br from-green-50/90 to-blue-50/90"></div>
         </div>

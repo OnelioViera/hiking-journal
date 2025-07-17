@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
@@ -18,12 +18,12 @@ import {
   Thermometer,
   Wind,
   Droplets,
-  Clock,
-  TrendingUp,
   Camera
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PhotoGallery from '@/components/PhotoGallery';
+import { IPhoto } from '@/models/JournalEntry';
+import Image from 'next/image';
 
 interface Entry {
   _id: string;
@@ -49,7 +49,7 @@ interface Entry {
   };
   rating: number;
   tags: string[];
-  photos: any[];
+  photos: IPhoto[];
   privacy: string;
 }
 
@@ -64,13 +64,7 @@ export default function EntryDetailPage() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
-  useEffect(() => {
-    if (isSignedIn && params.id) {
-      fetchEntry();
-    }
-  }, [isSignedIn, params.id]);
-
-  const fetchEntry = async () => {
+  const fetchEntry = useCallback(async () => {
     try {
       const response = await fetch(`/api/entries/${params.id}`);
       if (response.ok) {
@@ -107,7 +101,13 @@ export default function EntryDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, router]);
+
+  useEffect(() => {
+    if (isSignedIn && params.id) {
+      fetchEntry();
+    }
+  }, [isSignedIn, params.id, fetchEntry]);
 
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
@@ -207,7 +207,7 @@ export default function EntryDetailPage() {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Entry not found</h2>
-        <p className="text-gray-600 mb-6">The entry you're looking for doesn't exist.</p>
+        <p className="text-gray-600 mb-6">The entry you&apos;re looking for doesn&apos;t exist or has been deleted.</p>
         <Link
           href="/entries"
           className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
@@ -433,10 +433,13 @@ export default function EntryDetailPage() {
                       }}
                     >
                       <div className="aspect-square rounded-lg overflow-hidden border hover:scale-105 transition-transform duration-200">
-                        <img
+                        <Image
                           src={photo.url}
                           alt={photo.caption || `Photo ${index + 1}`}
                           className="w-full h-full object-cover"
+                          width={400}
+                          height={400}
+                          unoptimized
                         />
                       </div>
                       {photo.caption && (
@@ -534,7 +537,7 @@ export default function EntryDetailPage() {
             
             <div className="mb-6">
               <p className="text-gray-600">
-                Are you sure you want to delete <span className="font-semibold text-gray-900">"{entry.title}"</span>? 
+                Are you sure you want to delete <span className="font-semibold text-gray-900">&quot;{entry.title}&quot;</span>? 
                 This action cannot be undone.
               </p>
             </div>
