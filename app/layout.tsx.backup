@@ -8,20 +8,10 @@ import ToastProvider from '@/components/providers/ToastProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Hiking Journal',
-  description: 'Track your hiking adventures and preserve memories from your outdoor experiences',
-  keywords: 'hiking, journal, trails, outdoor adventures, nature',
+  title: Hiking Journal',
+  description: Track your hiking adventures and preserve memories from your outdoor experiences',
+  keywords:hiking, journal, trails, outdoor adventures, nature',
   authors: [{ name: 'Hiking Journal Team' }],
-  icons: [
-    {
-      rel: 'icon',
-      url: '/favicon.svg',
-    },
-    {
-      rel: 'shortcut icon',
-      url: '/favicon.ico',
-    },
-  ],
 };
 
 export const viewport: Viewport = {
