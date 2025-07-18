@@ -45,6 +45,18 @@ export default function EntryForm({ entry }: EntryFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photos, setPhotos] = useState<IPhoto[]>(entry?.photos || []);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  
+  // Convert existing duration to hours and minutes
+  const convertDurationToHoursMinutes = (duration: string | number | undefined) => {
+    if (!duration) return { hours: '', minutes: '' };
+    const totalMinutes = parseInt(duration.toString());
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return { hours: hours.toString(), minutes: minutes.toString() };
+  };
+
+  const initialDuration = convertDurationToHoursMinutes(entry?.trail?.duration);
+  
   const [formData, setFormData] = useState({
     title: entry?.title || '',
     description: entry?.description || '',
@@ -71,6 +83,10 @@ export default function EntryForm({ entry }: EntryFormProps) {
     rating: entry?.rating || 3,
     privacy: entry?.privacy || 'private'
   });
+
+  // Add state for hours and minutes
+  const [durationHours, setDurationHours] = useState(initialDuration.hours);
+  const [durationMinutes, setDurationMinutes] = useState(initialDuration.minutes);
 
   // Debug: Log when component mounts
   useEffect(() => {
@@ -172,6 +188,11 @@ export default function EntryForm({ entry }: EntryFormProps) {
     e.preventDefault();
     setIsSubmitting(true);
     
+    // Convert hours and minutes to total minutes
+    const hours = parseInt(durationHours) || 0;
+    const minutes = parseInt(durationMinutes) || 0;
+    const totalMinutes = hours * 60 + minutes;
+    
     // Show loading toast
     const toastId = toast.loading(
       entry ? 'Updating your entry...' : 'Creating your entry...',
@@ -189,6 +210,10 @@ export default function EntryForm({ entry }: EntryFormProps) {
     
     const submitData = {
       ...formData,
+      trail: {
+        ...formData.trail,
+        duration: totalMinutes
+      },
       tags: formData.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag),
       location: {
         ...formData.location
@@ -500,19 +525,36 @@ export default function EntryForm({ entry }: EntryFormProps) {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Duration (minutes)
+              Duration
             </label>
-            <input
-              type="number"
-              value={formData.trail.duration}
-              onChange={(e) => setFormData({
-                ...formData,
-                trail: {...formData.trail, duration: e.target.value}
-              })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              style={{ fontWeight: 500 }}
-              placeholder="e.g., 240"
-            />
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-xs text-gray-600 mb-1">Hours</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="24"
+                  value={durationHours}
+                  onChange={(e) => setDurationHours(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  style={{ fontWeight: 500 }}
+                  placeholder="0"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs text-gray-600 mb-1">Minutes</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  style={{ fontWeight: 500 }}
+                  placeholder="0"
+                />
+              </div>
+            </div>
           </div>
 
           <div>

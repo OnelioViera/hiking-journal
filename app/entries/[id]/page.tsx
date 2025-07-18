@@ -1,29 +1,27 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import Link from 'next/link';
+import Image from 'next/image';
 import { 
-  Calendar, 
-  MapPin, 
-  Mountain, 
-  Cloud, 
-  Star, 
-  Tag, 
   ArrowLeft, 
   Edit, 
-  Trash2,
-  AlertTriangle,
-  Thermometer,
-  Wind,
+  Trash2, 
+  Calendar, 
+  MapPin, 
+  Star, 
+  Mountain, 
+  Cloud, 
+  Tag, 
+  Camera, 
+  Thermometer, 
+  Wind, 
   Droplets,
-  Camera
+  AlertTriangle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PhotoGallery from '@/components/PhotoGallery';
-import { IPhoto } from '@/models/JournalEntry';
-import Image from 'next/image';
 
 interface Entry {
   _id: string;
@@ -32,7 +30,7 @@ interface Entry {
   date: string;
   location: {
     name: string;
-    elevation?: string;
+    elevation?: number;
   };
   trail: {
     name?: string;
@@ -48,78 +46,75 @@ interface Entry {
     windSpeed?: number;
     humidity?: number;
   };
-  rating: number;
   tags: string[];
-  photos: IPhoto[];
+  rating: number;
   privacy: string;
+  photos: {
+    url: string;
+    publicId: string;
+    caption?: string;
+    timestamp: Date;
+  }[];
 }
 
-export default function EntryDetailPage() {
-  const params = useParams();
-  const router = useRouter();
+export default function EntryDetailPage({ params }: { params: { id: string } }) {
   const { isSignedIn, isLoaded } = useAuth();
   const [entry, setEntry] = useState<Entry | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
-  const fetchEntry = useCallback(async () => {
+  // Helper function to format duration
+  const formatDuration = (minutes: number) => {
+    if (!minutes) return '';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0 && mins > 0) {
+      return `${hours}h ${mins}m`;
+    } else if (hours > 0) {
+      return `${hours}h`;
+    } else {
+      return `${mins}m`;
+    }
+  };
+
+  useEffect(() => {
+    if (isSignedIn) {
+      fetchEntry();
+    }
+  }, [isSignedIn, params.id]);
+
+  const fetchEntry = async () => {
     try {
       const response = await fetch(`/api/entries/${params.id}`);
       if (response.ok) {
         const data = await response.json();
         setEntry(data);
       } else {
-        toast.error('Entry not found', {
-          duration: 4000,
-          style: {
-            background: '#ef4444',
-            color: '#fff',
-            borderRadius: '12px',
-            padding: '16px',
-            fontSize: '14px',
-            fontWeight: '500',
-          },
-        });
-        router.push('/entries');
+        setEntry(null);
       }
     } catch (error) {
       console.error('Error fetching entry:', error);
-      toast.error('Failed to load entry', {
-        duration: 4000,
-        style: {
-          background: '#ef4444',
-          color: '#fff',
-          borderRadius: '12px',
-          padding: '16px',
-          fontSize: '14px',
-          fontWeight: '500',
-        },
-      });
-      router.push('/entries');
+      setEntry(null);
     } finally {
       setLoading(false);
     }
-  }, [params.id, router]);
-
-  useEffect(() => {
-    if (isSignedIn && params.id) {
-      fetchEntry();
-    }
-  }, [isSignedIn, params.id, fetchEntry]);
+  };
 
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
   };
 
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+  };
+
   const handleDeleteConfirm = async () => {
     if (!entry) return;
-
+    
     setDeleting(true);
-    setShowDeleteModal(false);
-
     try {
       const response = await fetch(`/api/entries/${entry._id}`, {
         method: 'DELETE',
@@ -137,7 +132,7 @@ export default function EntryDetailPage() {
             fontWeight: '500',
           },
         });
-        router.push('/entries');
+        window.location.href = '/entries';
       } else {
         toast.error('Failed to delete entry', {
           duration: 4000,
@@ -166,11 +161,8 @@ export default function EntryDetailPage() {
       });
     } finally {
       setDeleting(false);
+      setShowDeleteModal(false);
     }
-  };
-
-  const handleDeleteCancel = () => {
-    setShowDeleteModal(false);
   };
 
   if (!isLoaded) {
@@ -331,7 +323,7 @@ export default function EntryDetailPage() {
                 {entry.trail.duration && (
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1">Duration</label>
-                    <p className="text-gray-900" style={{ fontWeight: 500 }}>{entry.trail.duration} minutes</p>
+                    <p className="text-gray-900" style={{ fontWeight: 500 }}>{formatDuration(entry.trail.duration)}</p>
                   </div>
                 )}
                 
@@ -483,7 +475,6 @@ export default function EntryDetailPage() {
                     <p className="text-gray-900" style={{ fontWeight: 500 }}>{entry.location.elevation} feet</p>
                   </div>
                 )}
-                
               </div>
             </div>
 
@@ -502,7 +493,7 @@ export default function EntryDetailPage() {
                 {entry.trail.duration && (
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">Duration</span>
-                    <span className="font-semibold text-gray-900">{entry.trail.duration} min</span>
+                    <span className="font-semibold text-gray-900">{formatDuration(entry.trail.duration)}</span>
                   </div>
                 )}
                 

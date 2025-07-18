@@ -27,6 +27,20 @@ interface Entry {
   photos: IPhoto[];
 }
 
+// Helper function to format duration
+const formatDuration = (minutes: number) => {
+  if (!minutes) return '';
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours > 0 && mins > 0) {
+    return `${hours}h ${mins}m`;
+  } else if (hours > 0) {
+    return `${hours}h`;
+  } else {
+    return `${mins}m`;
+  }
+};
+
 export default function EntriesPage() {
   const { isSignedIn, isLoaded } = useAuth();
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -326,6 +340,12 @@ export default function EntriesPage() {
                         <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold flex items-center">
                           <Camera className="h-3 w-3 mr-1" />
                           {entry.photos.length} photo{entry.photos.length > 1 ? 's' : ''}
+                        </span>
+                      )}
+
+                      {entry.trail.duration && (
+                        <span className="px-2 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-semibold">
+                          {formatDuration(entry.trail.duration)}
                         </span>
                       )}
                     </div>
