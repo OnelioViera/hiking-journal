@@ -28,6 +28,7 @@ interface Entry {
 export default function DashboardPage() {
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<{

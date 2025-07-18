@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     if (search || location) {
       // Search trails - in real implementation, this would query AllTrails API
       const searchResults = Object.entries(mockTrailData)
-        .filter(([id, trail]) => {
+        .filter(([, trail]) => {
           const searchTerm = (search || location || '').toLowerCase();
           return trail.name.toLowerCase().includes(searchTerm) ||
                  trail.location.name.toLowerCase().includes(searchTerm) ||

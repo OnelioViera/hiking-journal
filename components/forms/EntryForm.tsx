@@ -90,13 +90,41 @@ export default function EntryForm({ entry }: EntryFormProps) {
 
   // Add these new state variables after the existing state declarations
   const [showTrailSearch, setShowTrailSearch] = useState(false);
-  const [trailSearchResults, setTrailSearchResults] = useState<any[]>([]);
+  const [trailSearchResults, setTrailSearchResults] = useState<TrailRecommendation[]>([]);
   const [searchingTrails, setSearchingTrails] = useState(false);
-  const [selectedTrail, setSelectedTrail] = useState<any>(null);
+  const [selectedTrail, setSelectedTrail] = useState<TrailRecommendation | null>(null);
 
   // Add these state variables after existing state declarations
-  const [weatherData, setWeatherData] = useState<any>(null);
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(false);
+
+  // Add interfaces for proper typing
+  interface TrailRecommendation {
+    id: string;
+    name: string;
+    location: {
+      name: string;
+      elevation?: number;
+    };
+    trail: {
+      name?: string;
+      difficulty: string;
+      distance: number;
+      duration: number;
+      elevationGain: number;
+      type?: string;
+    };
+    tags: string[];
+  }
+
+  interface WeatherData {
+    current: {
+      temperature: number;
+      conditions: string;
+      windSpeed: number;
+      humidity: number;
+    };
+  }
 
   // Debug: Log when component mounts
   useEffect(() => {
@@ -317,7 +345,7 @@ export default function EntryForm({ entry }: EntryFormProps) {
     }
   };
 
-  const selectTrail = (trail: any) => {
+  const selectTrail = (trail: TrailRecommendation) => {
     setSelectedTrail(trail);
     setFormData({
       ...formData,
@@ -327,12 +355,12 @@ export default function EntryForm({ entry }: EntryFormProps) {
         elevation: trail.location.elevation?.toString() || ''
       },
       trail: {
-        name: trail.trail.name,
+        name: trail.trail.name || '',
         difficulty: trail.trail.difficulty,
-        distance: trail.trail.distance?.toString(),
-        duration: trail.trail.duration?.toString(),
-        elevationGain: trail.trail.elevationGain?.toString(),
-        type: trail.trail.type
+        distance: trail.trail.distance?.toString() || '',
+        duration: trail.trail.duration?.toString() || '',
+        elevationGain: trail.trail.elevationGain?.toString() || '',
+        type: trail.trail.type || ''
       },
       tags: trail.tags?.join(', ') || ''
     });
@@ -477,7 +505,7 @@ export default function EntryForm({ entry }: EntryFormProps) {
           {/* Trail Search Results */}
           {showTrailSearch && trailSearchResults.length > 0 && (
             <div className="border border-gray-200 rounded-md max-h-60 overflow-y-auto">
-              {trailSearchResults.map((trail, index) => (
+              {trailSearchResults.map((trail) => (
                 <div
                   key={trail.id}
                   className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"

@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Mountain, MapPin, Star, Clock, TrendingUp } from 'lucide-react';
-import Link from 'next/link';
+import { useState, useEffect, useCallback } from 'react';
+import { Mountain, Star, Clock, TrendingUp } from 'lucide-react';
 
 interface TrailRecommendation {
   id: string;
@@ -27,7 +26,7 @@ interface TrailRecommendation {
 }
 
 interface TrailRecommendationsProps {
-  currentTrail?: any;
+  currentTrail?: TrailRecommendation;
   location?: string;
 }
 
@@ -35,11 +34,7 @@ export default function TrailRecommendations({ currentTrail, location }: TrailRe
   const [recommendations, setRecommendations] = useState<TrailRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchRecommendations();
-  }, [location]);
-
-  const fetchRecommendations = async () => {
+  const fetchRecommendations = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/trails?location=${encodeURIComponent(location || 'Colorado')}`);
@@ -47,7 +42,7 @@ export default function TrailRecommendations({ currentTrail, location }: TrailRe
         const data = await response.json();
         // Filter out current trail and limit to 3 recommendations
         const filtered = data.trails
-          .filter((trail: any) => trail.id !== currentTrail?.id)
+          .filter((trail: TrailRecommendation) => trail.id !== currentTrail?.id)
           .slice(0, 3);
         setRecommendations(filtered);
       }
@@ -56,7 +51,11 @@ export default function TrailRecommendations({ currentTrail, location }: TrailRe
     } finally {
       setLoading(false);
     }
-  };
+  }, [location, currentTrail?.id]);
+
+  useEffect(() => {
+    fetchRecommendations();
+  }, [fetchRecommendations]);
 
   if (loading) {
     return (
