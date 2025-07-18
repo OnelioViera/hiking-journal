@@ -17,6 +17,7 @@ interface Entry {
   trail: {
     difficulty: string;
     distance?: number;
+    type?: string;
   };
   rating: number;
   tags: string[];

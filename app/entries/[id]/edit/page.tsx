@@ -23,6 +23,7 @@ interface Entry {
     distance?: number;
     duration?: number;
     elevationGain?: number;
+    type?: string;
   };
   weather: {
     temperature?: number;

@@ -22,6 +22,7 @@ interface EntryFormEntry {
     distance?: string | number;
     duration?: string | number;
     elevationGain?: string | number;
+    type?: string;
   };
   weather: {
     temperature?: string | number;
@@ -57,7 +58,8 @@ export default function EntryForm({ entry }: EntryFormProps) {
       difficulty: entry?.trail?.difficulty || 'easy',
       distance: entry?.trail?.distance || '',
       duration: entry?.trail?.duration || '',
-      elevationGain: entry?.trail?.elevationGain || ''
+      elevationGain: entry?.trail?.elevationGain || '',
+      type: entry?.trail?.type || ''
     },
     weather: {
       temperature: entry?.weather?.temperature || '',
@@ -528,6 +530,28 @@ export default function EntryForm({ entry }: EntryFormProps) {
               style={{ fontWeight: 500 }}
               placeholder="e.g., 1500"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Trail Type
+            </label>
+            <select
+              value={formData.trail.type}
+              onChange={(e) => setFormData({
+                ...formData,
+                trail: {...formData.trail, type: e.target.value}
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              style={{ fontWeight: 500 }}
+            >
+              <option value="">Select trail type</option>
+              <option value="loop">Loop</option>
+              <option value="out-and-back">Out and Back</option>
+              <option value="lollipop">Lollipop</option>
+              <option value="point-to-point">Point to Point</option>
+              <option value="other">Other</option>
+            </select>
           </div>
         </div>
       </div>

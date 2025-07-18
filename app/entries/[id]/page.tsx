@@ -40,6 +40,7 @@ interface Entry {
     distance?: number;
     duration?: number;
     elevationGain?: number;
+    type?: string;
   };
   weather: {
     temperature?: number;
@@ -338,6 +339,13 @@ export default function EntryDetailPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1">Elevation Gain</label>
                     <p className="text-gray-900" style={{ fontWeight: 500 }}>{entry.trail.elevationGain} feet</p>
+                  </div>
+                )}
+                
+                {entry.trail.type && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Trail Type</label>
+                    <p className="text-gray-900" style={{ fontWeight: 500 }}>{entry.trail.type}</p>
                   </div>
                 )}
               </div>

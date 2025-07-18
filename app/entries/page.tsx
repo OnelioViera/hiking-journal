@@ -18,6 +18,7 @@ interface Entry {
   trail: {
     difficulty: string;
     distance?: number;
+    type?: string;
   };
   rating: number;
   tags: string[];
@@ -298,6 +299,12 @@ export default function EntriesPage() {
                       {entry.trail.distance && (
                         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
                           {entry.trail.distance} mi
+                        </span>
+                      )}
+                      
+                      {entry.trail.type && (
+                        <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-semibold">
+                          {entry.trail.type}
                         </span>
                       )}
                       

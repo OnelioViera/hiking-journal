@@ -23,6 +23,7 @@ export interface ITrail {
   distance?: number;
   duration?: number; // in minutes
   elevationGain?: number;
+  type?: 'loop' | 'out-and-back' | 'lollipop' | 'point-to-point' | 'other';
 }
 
 export interface IWeather {
@@ -67,7 +68,8 @@ const journalEntrySchema = new Schema<IJournalEntry>({
     difficulty: { type: String, enum: ['easy', 'moderate', 'hard', 'expert'] },
     distance: Number,
     duration: Number, // in minutes
-    elevationGain: Number
+    elevationGain: Number,
+    type: { type: String, enum: ['loop', 'out-and-back', 'lollipop', 'point-to-point', 'other'] }
   },
   weather: {
     temperature: Number,
