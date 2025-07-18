@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth, SignInButton, SignOutButton, UserButton } from '@clerk/nextjs';
-import { Mountain, Menu, X, Home, MapPin } from 'lucide-react';
+import { Mountain, Menu, X, Home } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Header() {
@@ -37,14 +37,6 @@ export default function Header() {
                   style={{ fontWeight: 500 }}
                 >
                   Journal
-                </Link>
-                <Link 
-                  href="/trails" 
-                  className="text-gray-600 hover:text-green-600 transition-colors nav-item"
-                  style={{ fontWeight: 500 }}
-                >
-                  <MapPin className="h-4 w-4 inline mr-1" />
-                  Trails
                 </Link>
                 <Link 
                   href="/dashboard" 
@@ -121,15 +113,6 @@ export default function Header() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Journal
-                  </Link>
-                  <Link 
-                    href="/trails" 
-                    className="text-gray-600 hover:text-green-600 transition-colors nav-item"
-                    style={{ fontWeight: 500 }}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <MapPin className="h-4 w-4 inline mr-1" />
-                    Trails
                   </Link>
                   <Link 
                     href="/dashboard" 

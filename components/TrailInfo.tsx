@@ -1,4 +1,4 @@
-import { Mountain, MapPin, Clock, TrendingUp, Users, Star } from 'lucide-react';
+import { Mountain, MapPin, Clock, TrendingUp, Users, Star, AlertTriangle } from 'lucide-react';
 
 interface TrailInfoProps {
   trail: {

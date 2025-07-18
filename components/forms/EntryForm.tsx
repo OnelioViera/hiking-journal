@@ -88,44 +88,6 @@ export default function EntryForm({ entry }: EntryFormProps) {
   const [durationHours, setDurationHours] = useState(initialDuration.hours);
   const [durationMinutes, setDurationMinutes] = useState(initialDuration.minutes);
 
-  // Add these new state variables after the existing state declarations
-  const [showTrailSearch, setShowTrailSearch] = useState(false);
-  const [trailSearchResults, setTrailSearchResults] = useState<TrailRecommendation[]>([]);
-  const [searchingTrails, setSearchingTrails] = useState(false);
-  const [selectedTrail, setSelectedTrail] = useState<TrailRecommendation | null>(null);
-
-  // Add these state variables after existing state declarations
-  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
-  const [loadingWeather, setLoadingWeather] = useState(false);
-
-  // Add interfaces for proper typing
-  interface TrailRecommendation {
-    id: string;
-    name: string;
-    location: {
-      name: string;
-      elevation?: number;
-    };
-    trail: {
-      name?: string;
-      difficulty: string;
-      distance: number;
-      duration: number;
-      elevationGain: number;
-      type?: string;
-    };
-    tags: string[];
-  }
-
-  interface WeatherData {
-    current: {
-      temperature: number;
-      conditions: string;
-      windSpeed: number;
-      humidity: number;
-    };
-  }
-
   // Debug: Log when component mounts
   useEffect(() => {
     console.log('EntryForm mounted with entry:', entry);
@@ -324,93 +286,6 @@ export default function EntryForm({ entry }: EntryFormProps) {
     }
   };
 
-  const searchTrails = async (query: string) => {
-    if (!query.trim()) {
-      setTrailSearchResults([]);
-      return;
-    }
-
-    setSearchingTrails(true);
-    try {
-      const response = await fetch(`/api/trails?search=${encodeURIComponent(query)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setTrailSearchResults(data.trails || []);
-      }
-    } catch (error) {
-      console.error('Error searching trails:', error);
-      toast.error('Failed to search trails');
-    } finally {
-      setSearchingTrails(false);
-    }
-  };
-
-  const selectTrail = (trail: TrailRecommendation) => {
-    setSelectedTrail(trail);
-    setFormData({
-      ...formData,
-      title: trail.name,
-      location: {
-        name: trail.location.name,
-        elevation: trail.location.elevation?.toString() || ''
-      },
-      trail: {
-        name: trail.trail.name || '',
-        difficulty: trail.trail.difficulty,
-        distance: trail.trail.distance?.toString() || '',
-        duration: trail.trail.duration?.toString() || '',
-        elevationGain: trail.trail.elevationGain?.toString() || '',
-        type: trail.trail.type || ''
-      },
-      tags: trail.tags?.join(', ') || ''
-    });
-    
-    // Convert duration to hours and minutes
-    if (trail.trail.duration) {
-      const hours = Math.floor(trail.trail.duration / 60);
-      const minutes = trail.trail.duration % 60;
-      setDurationHours(hours.toString());
-      setDurationMinutes(minutes.toString());
-    }
-    
-    setShowTrailSearch(false);
-    setTrailSearchResults([]);
-    toast.success('Trail data imported successfully!');
-  };
-
-  const fetchWeatherData = async (location: string) => {
-    if (!location.trim()) return;
-    
-    setLoadingWeather(true);
-    try {
-      // In a real implementation, you'd geocode the location first
-      // For now, using mock coordinates for Colorado
-      const response = await fetch(`/api/weather?lat=38.9567&lon=-105.0167&location=${encodeURIComponent(location)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setWeatherData(data);
-        
-        // Auto-fill weather data
-        if (data.current) {
-          setFormData({
-            ...formData,
-            weather: {
-              temperature: data.current.temperature.toString(),
-              conditions: data.current.conditions,
-              windSpeed: data.current.windSpeed.toString(),
-              humidity: data.current.humidity.toString()
-            }
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching weather:', error);
-      toast.error('Failed to fetch weather data');
-    } finally {
-      setLoadingWeather(false);
-    }
-  };
-
   return (
     <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8 pb-8">
       {/* Basic Information */}
@@ -463,100 +338,6 @@ export default function EntryForm({ entry }: EntryFormProps) {
             required
             placeholder="Describe your hiking experience, what you saw, how you felt..."
           />
-        </div>
-      </div>
-
-      {/* Trail Data Integration */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
-        <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <Mountain className="h-5 w-5 mr-2 text-green-600" />
-          Import Trail Data
-        </h3>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Search for Trail
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search for trails (e.g., Rampart Reservoir, Colorado)"
-                onChange={(e) => {
-                  const query = e.target.value;
-                  if (query.length > 2) {
-                    searchTrails(query);
-                  } else {
-                    setTrailSearchResults([]);
-                  }
-                }}
-                onFocus={() => setShowTrailSearch(true)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                style={{ fontWeight: 500 }}
-              />
-              {searchingTrails && (
-                <div className="absolute right-3 top-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Trail Search Results */}
-          {showTrailSearch && trailSearchResults.length > 0 && (
-            <div className="border border-gray-200 rounded-md max-h-60 overflow-y-auto">
-              {trailSearchResults.map((trail) => (
-                <div
-                  key={trail.id}
-                  className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                  onClick={() => selectTrail(trail)}
-                >
-                  <div className="font-medium text-gray-900">{trail.name}</div>
-                  <div className="text-sm text-gray-600">{trail.location.name}</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {trail.trail.distance} miles • {trail.trail.difficulty} • {trail.trail.elevationGain} ft gain
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Selected Trail Info */}
-          {selectedTrail && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-green-900">Imported Trail Data</h4>
-                  <p className="text-sm text-green-700">{selectedTrail.name}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedTrail(null);
-                    setFormData({
-                      ...formData,
-                      title: '',
-                      location: { name: '', elevation: '' },
-                      trail: {
-                        name: '',
-                        difficulty: 'easy',
-                        distance: '',
-                        duration: '',
-                        elevationGain: '',
-                        type: ''
-                      },
-                      tags: ''
-                    });
-                    setDurationHours('');
-                    setDurationMinutes('');
-                  }}
-                  className="text-green-600 hover:text-green-800 text-sm"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -646,28 +427,18 @@ export default function EntryForm({ entry }: EntryFormProps) {
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Location Name *
             </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={formData.location.name}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  location: {...formData.location, name: e.target.value}
-                })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                style={{ fontWeight: 500 }}
-                required
-                placeholder="e.g., Mount Rainier National Park"
-              />
-              <button
-                type="button"
-                onClick={() => fetchWeatherData(formData.location.name)}
-                disabled={!formData.location.name.trim() || loadingWeather}
-                className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                {loadingWeather ? 'Loading...' : 'Get Weather'}
-              </button>
-            </div>
+            <input
+              type="text"
+              value={formData.location.name}
+              onChange={(e) => setFormData({
+                ...formData,
+                location: {...formData.location, name: e.target.value}
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              style={{ fontWeight: 500 }}
+              required
+              placeholder="e.g., Mount Rainier National Park"
+            />
           </div>
 
           <div>
@@ -827,37 +598,12 @@ export default function EntryForm({ entry }: EntryFormProps) {
         </div>
       </div>
 
-      {/* Weather Integration */}
+      {/* Weather Information */}
       <div className="bg-white p-6 rounded-lg shadow-sm border">
         <h3 className="text-lg font-semibold mb-4 flex items-center">
           <Cloud className="h-5 w-5 mr-2 text-green-600" />
           Weather Conditions
-          {weatherData && (
-            <button
-              type="button"
-              onClick={() => fetchWeatherData(formData.location.name)}
-              className="ml-auto text-sm text-green-600 hover:text-green-800"
-              disabled={loadingWeather}
-            >
-              {loadingWeather ? 'Loading...' : 'Refresh'}
-            </button>
-          )}
         </h3>
-        
-        {weatherData && (
-          <div className="mb-4 p-4 bg-blue-50 rounded-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-lg font-semibold">{weatherData.current.temperature}°F</div>
-                <div className="text-sm text-gray-600">{weatherData.current.conditions}</div>
-              </div>
-              <div className="text-right text-sm">
-                <div>Wind: {weatherData.current.windSpeed} mph</div>
-                <div>Humidity: {weatherData.current.humidity}%</div>
-              </div>
-            </div>
-          </div>
-        )}
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>

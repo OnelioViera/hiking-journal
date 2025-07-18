@@ -1,32 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Mountain, Star, Clock, TrendingUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mountain, MapPin, Star, Clock, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 
 interface TrailRecommendation {
   id: string;
   name: string;
-  location: {
-    name: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
-    };
-    elevation?: number;
-  };
-  trail: {
-    name?: string;
-    difficulty: string;
-    distance: number;
-    duration: number;
-    elevationGain: number;
-    type?: string;
-  };
-  rating?: number;
-  reviews?: number;
+  location: string;
+  difficulty: string;
+  distance: number;
+  duration: number;
+  elevationGain: number;
+  rating: number;
+  reviews: number;
   image?: string;
 }
 
 interface TrailRecommendationsProps {
-  currentTrail?: TrailRecommendation;
+  currentTrail?: any;
   location?: string;
 }
 
@@ -34,7 +24,11 @@ export default function TrailRecommendations({ currentTrail, location }: TrailRe
   const [recommendations, setRecommendations] = useState<TrailRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchRecommendations = useCallback(async () => {
+  useEffect(() => {
+    fetchRecommendations();
+  }, [location]);
+
+  const fetchRecommendations = async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/trails?location=${encodeURIComponent(location || 'Colorado')}`);
@@ -42,7 +36,7 @@ export default function TrailRecommendations({ currentTrail, location }: TrailRe
         const data = await response.json();
         // Filter out current trail and limit to 3 recommendations
         const filtered = data.trails
-          .filter((trail: TrailRecommendation) => trail.id !== currentTrail?.id)
+          .filter((trail: any) => trail.id !== currentTrail?.id)
           .slice(0, 3);
         setRecommendations(filtered);
       }
@@ -51,11 +45,7 @@ export default function TrailRecommendations({ currentTrail, location }: TrailRe
     } finally {
       setLoading(false);
     }
-  }, [location, currentTrail?.id]);
-
-  useEffect(() => {
-    fetchRecommendations();
-  }, [fetchRecommendations]);
+  };
 
   if (loading) {
     return (
@@ -83,34 +73,34 @@ export default function TrailRecommendations({ currentTrail, location }: TrailRe
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h4 className="font-medium text-gray-900 mb-1">{trail.name}</h4>
-                <p className="text-sm text-gray-600 mb-2">{trail.location.name}</p>
+                <p className="text-sm text-gray-600 mb-2">{trail.location}</p>
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                   <span className="flex items-center">
                     <Mountain className="h-4 w-4 mr-1" />
-                    {trail.trail.distance} mi
+                    {trail.distance} mi
                   </span>
                   <span className="flex items-center">
                     <Clock className="h-4 w-4 mr-1" />
-                    {Math.floor(trail.trail.duration / 60)}h {trail.trail.duration % 60}m
+                    {Math.floor(trail.duration / 60)}h {trail.duration % 60}m
                   </span>
                   <span className="flex items-center">
                     <TrendingUp className="h-4 w-4 mr-1" />
-                    {trail.trail.elevationGain} ft
+                    {trail.elevationGain} ft
                   </span>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="flex items-center">
                   <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                  <span className="ml-1 text-sm font-medium">{trail.rating || 4.5}</span>
+                  <span className="ml-1 text-sm font-medium">{trail.rating}</span>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  trail.trail.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
-                  trail.trail.difficulty === 'moderate' ? 'bg-yellow-100 text-yellow-800' :
-                  trail.trail.difficulty === 'hard' ? 'bg-orange-100 text-orange-800' :
+                  trail.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
+                  trail.difficulty === 'moderate' ? 'bg-yellow-100 text-yellow-800' :
+                  trail.difficulty === 'hard' ? 'bg-orange-100 text-orange-800' :
                   'bg-red-100 text-red-800'
                 }`}>
-                  {trail.trail.difficulty}
+                  {trail.difficulty}
                 </span>
               </div>
             </div>
