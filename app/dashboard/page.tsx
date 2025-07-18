@@ -2,7 +2,7 @@
 
 import { useAuth, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
-import { Mountain, Calendar, MapPin, TrendingUp, Camera, BarChart3, Target, Award, Clock, Thermometer } from 'lucide-react';
+import { Mountain, Calendar, MapPin, TrendingUp, Camera, BarChart3, Target, Award } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { IPhoto } from '@/models/JournalEntry';
 

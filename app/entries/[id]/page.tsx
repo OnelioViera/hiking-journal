@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
@@ -57,7 +58,9 @@ interface Entry {
   }[];
 }
 
-export default function EntryDetailPage({ params }: { params: { id: string } }) {
+export default function EntryDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
   const { isSignedIn, isLoaded } = useAuth();
   const [entry, setEntry] = useState<Entry | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,15 +83,9 @@ export default function EntryDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-  useEffect(() => {
-    if (isSignedIn) {
-      fetchEntry();
-    }
-  }, [isSignedIn, params.id]);
-
-  const fetchEntry = async () => {
+  const fetchEntry = useCallback(async () => {
     try {
-      const response = await fetch(`/api/entries/${params.id}`);
+      const response = await fetch(`/api/entries/${id}`);
       if (response.ok) {
         const data = await response.json();
         setEntry(data);
@@ -101,7 +98,13 @@ export default function EntryDetailPage({ params }: { params: { id: string } }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (isSignedIn && id) {
+      fetchEntry();
+    }
+  }, [isSignedIn, id, fetchEntry]);
 
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
