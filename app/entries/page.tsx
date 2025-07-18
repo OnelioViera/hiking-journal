@@ -19,6 +19,8 @@ interface Entry {
     difficulty: string;
     distance?: number;
     type?: string;
+    elevationGain?: number;
+    duration?: number;
   };
   rating: number;
   tags: string[];

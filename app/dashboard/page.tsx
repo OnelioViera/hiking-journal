@@ -2,7 +2,7 @@
 
 import { useAuth, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
-import { Mountain, Calendar, MapPin, TrendingUp, Camera } from 'lucide-react';
+import { Mountain, Calendar, MapPin, TrendingUp, Camera, BarChart3, Target, Award, Clock, Thermometer } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { IPhoto } from '@/models/JournalEntry';
 
@@ -18,6 +18,7 @@ interface Entry {
     difficulty: string;
     distance?: number;
     type?: string;
+    elevationGain?: number;
   };
   rating: number;
   tags: string[];
@@ -34,11 +35,34 @@ export default function DashboardPage() {
     thisMonth: number;
     totalDistance: number;
     totalPhotos: number;
+    // Advanced analytics
+    totalElevation: number;
+    averageDistance: number;
+    averageRating: number;
+    favoriteDifficulty: string;
+    favoriteTrailType: string;
+    longestHike: number;
+    highestElevation: number;
+    hikingStreak: number;
+    monthlyTrends: { month: string; hikes: number }[];
+    difficultyBreakdown: { difficulty: string; count: number }[];
+    trailTypeBreakdown: { type: string; count: number }[];
   }>({
     totalHikes: 0,
     thisMonth: 0,
     totalDistance: 0,
-    totalPhotos: 0
+    totalPhotos: 0,
+    totalElevation: 0,
+    averageDistance: 0,
+    averageRating: 0,
+    favoriteDifficulty: '',
+    favoriteTrailType: '',
+    longestHike: 0,
+    highestElevation: 0,
+    hikingStreak: 0,
+    monthlyTrends: [],
+    difficultyBreakdown: [],
+    trailTypeBreakdown: []
   });
 
   const fetchDashboardData = useCallback(async () => {
@@ -79,11 +103,90 @@ export default function DashboardPage() {
       sum + (entry.photos?.length || 0), 0
     );
 
+    // Advanced analytics calculations
+    const totalElevation = entries.reduce((sum, entry) => 
+      sum + (entry.trail.elevationGain || 0), 0
+    );
+    
+    const averageDistance = totalHikes > 0 ? totalDistance / totalHikes : 0;
+    const averageRating = entries.reduce((sum, entry) => sum + entry.rating, 0) / totalHikes || 0;
+    
+    // Difficulty analysis
+    const difficultyCounts = entries.reduce((acc, entry) => {
+      const difficulty = entry.trail.difficulty;
+      acc[difficulty] = (acc[difficulty] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    const favoriteDifficulty = Object.entries(difficultyCounts)
+      .sort(([,a], [,b]) => b - a)[0]?.[0] || '';
+    
+    // Trail type analysis
+    const trailTypeCounts = entries.reduce((acc, entry) => {
+      if (entry.trail.type) {
+        acc[entry.trail.type] = (acc[entry.trail.type] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+    const favoriteTrailType = Object.entries(trailTypeCounts)
+      .sort(([,a], [,b]) => b - a)[0]?.[0] || '';
+    
+    // Longest hike and highest elevation
+    const longestHike = Math.max(...entries.map(entry => entry.trail.distance || 0));
+    const highestElevation = Math.max(...entries.map(entry => entry.trail.elevationGain || 0));
+    
+    // Monthly trends (last 6 months)
+    const monthlyTrends = [];
+    for (let i = 5; i >= 0; i--) {
+      const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const monthHikes = entries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= month && entryDate < nextMonth;
+      }).length;
+      monthlyTrends.push({
+        month: month.toLocaleDateString('en-US', { month: 'short' }),
+        hikes: monthHikes
+      });
+    }
+    
+    // Difficulty breakdown
+    const difficultyBreakdown = Object.entries(difficultyCounts).map(([difficulty, count]) => ({
+      difficulty,
+      count
+    }));
+    
+    // Trail type breakdown
+    const trailTypeBreakdown = Object.entries(trailTypeCounts).map(([type, count]) => ({
+      type,
+      count
+    }));
+    
+    // Calculate hiking streak (simplified - consecutive months with hikes)
+    let hikingStreak = 0;
+    for (let i = 0; i < monthlyTrends.length; i++) {
+      if (monthlyTrends[i].hikes > 0) {
+        hikingStreak++;
+      } else {
+        break;
+      }
+    }
+
     setStats({
       totalHikes,
       thisMonth: thisMonthHikes,
       totalDistance,
-      totalPhotos
+      totalPhotos,
+      totalElevation,
+      averageDistance,
+      averageRating,
+      favoriteDifficulty,
+      favoriteTrailType,
+      longestHike,
+      highestElevation,
+      hikingStreak,
+      monthlyTrends,
+      difficultyBreakdown,
+      trailTypeBreakdown
     });
   };
 
@@ -178,108 +281,129 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-lg shadow-sm border">
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
+      {/* Advanced Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <BarChart3 className="h-5 w-5 mr-2 text-green-600" />
+            Advanced Statistics
+          </h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <p className="text-2xl font-bold text-green-600">{stats.averageDistance.toFixed(1)}</p>
+                <p className="text-xs text-gray-600">Avg Distance (mi)</p>
+              </div>
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <p className="text-2xl font-bold text-blue-600">{stats.averageRating.toFixed(1)}</p>
+                <p className="text-xs text-gray-600">Avg Rating</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Total Elevation</span>
+                <span className="font-semibold">{stats.totalElevation.toLocaleString()} ft</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Longest Hike</span>
+                <span className="font-semibold">{stats.longestHike} mi</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Highest Elevation</span>
+                <span className="font-semibold">{stats.highestElevation.toLocaleString()} ft</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Hiking Streak</span>
+                <span className="font-semibold">{stats.hikingStreak} months</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="p-6">
-          {entries.length === 0 ? (
-            <div className="text-center py-12">
-              <TrendingUp className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg text-gray-900 mb-2" style={{ fontWeight: 500 }}>No recent activity</h3>
-              <p className="text-gray-600 mb-6">
-                Start documenting your hiking adventures to see your activity here.
-              </p>
-              <Link
-                href="/entries/new"
-                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Create Your First Entry
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {entries.slice(0, 5).map((entry) => (
-                <div key={entry._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center">
-                    <Mountain className="h-5 w-5 text-green-600 mr-3" />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{entry.title}</h4>
-                      <p className="text-sm text-gray-600">{entry.location.name}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">
-                      {new Date(entry.date).toLocaleDateString()}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {entry.trail.difficulty} • {entry.trail.distance || 0} mi
-                    </p>
-                  </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <Target className="h-5 w-5 mr-2 text-green-600" />
+            Your Insights
+          </h3>
+          <div className="space-y-4">
+            {stats.favoriteDifficulty && (
+              <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                <div className="flex items-center">
+                  <Award className="h-4 w-4 text-yellow-600 mr-2" />
+                  <span className="text-sm font-medium">Favorite Difficulty</span>
                 </div>
-              ))}
-              {entries.length > 5 && (
-                <div className="text-center pt-4">
-                  <Link
-                    href="/entries"
-                    className="text-green-600 hover:text-green-700 font-semibold"
-                  >
-                    View All Entries →
-                  </Link>
+                <span className="text-sm font-semibold capitalize">{stats.favoriteDifficulty}</span>
+              </div>
+            )}
+            
+            {stats.favoriteTrailType && (
+              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                <div className="flex items-center">
+                  <MapPin className="h-4 w-4 text-purple-600 mr-2" />
+                  <span className="text-sm font-medium">Preferred Trail Type</span>
                 </div>
-              )}
+                <span className="text-sm font-semibold capitalize">{stats.favoriteTrailType.replace('-', ' ')}</span>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Monthly Average</span>
+                <span className="font-semibold">{(stats.totalHikes / 12).toFixed(1)} hikes</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Photos per Hike</span>
+                <span className="font-semibold">{(stats.totalPhotos / stats.totalHikes).toFixed(1)}</span>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="space-y-3">
-            <Link
-              href="/entries/new"
-              className="block w-full text-left px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center">
-                <Mountain className="h-5 w-5 text-green-600 mr-3" />
-                <span className="font-semibold">Create New Entry</span>
+      {/* Monthly Trends Chart */}
+      {stats.monthlyTrends.length > 0 && (
+        <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+            Monthly Hiking Trends
+          </h3>
+          <div className="flex items-end justify-between h-32">
+            {stats.monthlyTrends.map((month, index) => (
+              <div key={index} className="flex flex-col items-center">
+                <div 
+                  className="bg-green-500 rounded-t w-8 mb-2 transition-all duration-300 hover:bg-green-600"
+                  style={{ 
+                    height: `${Math.max(month.hikes * 8, 4)}px`,
+                    minHeight: '4px'
+                  }}
+                ></div>
+                <span className="text-xs text-gray-600">{month.month}</span>
+                <span className="text-xs font-semibold text-gray-900">{month.hikes}</span>
               </div>
-            </Link>
-            <Link
-              href="/entries"
-              className="block w-full text-left px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center">
-                <Calendar className="h-5 w-5 text-blue-600 mr-3" />
-                <span className="font-semibold">View All Entries</span>
-              </div>
-            </Link>
+            ))}
           </div>
         </div>
+      )}
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Coming Soon</h3>
-          <div className="space-y-3 text-sm text-gray-600">
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-gray-300 rounded-full mr-3"></div>
-              <span>Interactive maps with trail plotting</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-gray-300 rounded-full mr-3"></div>
-              <span>Weather API integration</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-gray-300 rounded-full mr-3"></div>
-              <span>Advanced statistics and insights</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-gray-300 rounded-full mr-3"></div>
-              <span>Export functionality (PDF, CSV)</span>
-            </div>
-          </div>
+      {/* Quick Actions */}
+      <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Link
+            href="/entries/new"
+            className="flex items-center px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            <Mountain className="h-5 w-5 text-green-600 mr-3" />
+            <span className="font-semibold">Create New Entry</span>
+          </Link>
+          <Link
+            href="/entries"
+            className="flex items-center px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            <Calendar className="h-5 w-5 text-blue-600 mr-3" />
+            <span className="font-semibold">View All Entries</span>
+          </Link>
         </div>
       </div>
     </div>
