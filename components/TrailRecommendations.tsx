@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mountain, MapPin, Star, Clock, TrendingUp } from 'lucide-react';
-import Link from 'next/link';
+import { Mountain, Star, Clock, TrendingUp } from 'lucide-react';
 
 interface TrailRecommendation {
   id: string;
@@ -15,8 +14,21 @@ interface TrailRecommendation {
   image?: string;
 }
 
+interface CurrentTrail {
+  id: string;
+  name: string;
+  location: string;
+  difficulty: string;
+  distance: number;
+  duration: number;
+  elevationGain: number;
+  rating: number;
+  reviews: number;
+  image?: string;
+}
+
 interface TrailRecommendationsProps {
-  currentTrail?: any;
+  currentTrail?: CurrentTrail;
   location?: string;
 }
 
@@ -25,27 +37,27 @@ export default function TrailRecommendations({ currentTrail, location }: TrailRe
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchRecommendations();
-  }, [location]);
-
-  const fetchRecommendations = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/trails?location=${encodeURIComponent(location || 'Colorado')}`);
-      if (response.ok) {
-        const data = await response.json();
-        // Filter out current trail and limit to 3 recommendations
-        const filtered = data.trails
-          .filter((trail: any) => trail.id !== currentTrail?.id)
-          .slice(0, 3);
-        setRecommendations(filtered);
+    const fetchRecommendations = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/trails?location=${encodeURIComponent(location || 'Colorado')}`);
+        if (response.ok) {
+          const data = await response.json();
+          // Filter out current trail and limit to 3 recommendations
+          const filtered = data.trails
+            .filter((trail: TrailRecommendation) => trail.id !== currentTrail?.id)
+            .slice(0, 3);
+          setRecommendations(filtered);
+        }
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching recommendations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchRecommendations();
+  }, [location, currentTrail?.id]);
 
   if (loading) {
     return (

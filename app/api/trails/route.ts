@@ -54,15 +54,16 @@ export async function GET(request: NextRequest) {
 
     if (search || location) {
       // Search trails - in real implementation, this would query AllTrails API
-      const searchResults = Object.entries(mockTrailData)
-        .filter(([id, trail]) => {
+      const searchResults = Object.keys(mockTrailData)
+        .filter((id) => {
+          const trail = mockTrailData[id as keyof typeof mockTrailData];
           const searchTerm = (search || location || '').toLowerCase();
           return trail.name.toLowerCase().includes(searchTerm) ||
                  trail.location.name.toLowerCase().includes(searchTerm);
         })
-        .map(([id, trail]) => ({
+        .map((id) => ({
           id,
-          ...trail
+          ...mockTrailData[id as keyof typeof mockTrailData]
         }));
 
       return NextResponse.json({
@@ -72,9 +73,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Return all available trails
-    const allTrails = Object.entries(mockTrailData).map(([id, trail]) => ({
+    const allTrails = Object.keys(mockTrailData).map((id) => ({
       id,
-      ...trail
+      ...mockTrailData[id as keyof typeof mockTrailData]
     }));
 
     return NextResponse.json({
