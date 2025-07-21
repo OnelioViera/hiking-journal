@@ -21,6 +21,14 @@ interface PhotoGalleryProps {
 export default function PhotoGallery({ photos, isOpen, onClose, initialIndex = 0 }: PhotoGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
+  // Convert HEIC URLs to JPEG for better browser compatibility
+  const convertHeicToJpeg = (url: string): string => {
+    if (url.includes('.heic')) {
+      return url.replace('.heic', '.jpg');
+    }
+    return url;
+  };
+
   if (!isOpen || photos.length === 0) return null;
 
   const goToPrevious = () => {
@@ -82,12 +90,20 @@ export default function PhotoGallery({ photos, isOpen, onClose, initialIndex = 0
       {/* Main Image */}
       <div className="relative max-w-4xl max-h-full mx-4">
         <Image
-          src={currentPhoto.url}
+          src={convertHeicToJpeg(currentPhoto.url)}
           alt={currentPhoto.caption || `Photo ${currentIndex + 1}`}
           className="max-w-full max-h-full object-contain"
           width={1200}
           height={900}
           unoptimized
+          onError={(e) => {
+            console.error('PhotoGallery image failed to load:', currentPhoto.url, e);
+            // Try to load the original URL as fallback
+            const target = e.target as HTMLImageElement;
+            if (target.src !== currentPhoto.url) {
+              target.src = currentPhoto.url;
+            }
+          }}
         />
         
         {/* Photo Info */}
@@ -119,12 +135,20 @@ export default function PhotoGallery({ photos, isOpen, onClose, initialIndex = 0
               }`}
             >
               <Image
-                src={photo.url}
+                src={convertHeicToJpeg(photo.url)}
                 alt={`Thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
                 width={64}
                 height={64}
                 unoptimized
+                onError={(e) => {
+                  console.error('PhotoGallery thumbnail failed to load:', photo.url, e);
+                  // Try to load the original URL as fallback
+                  const target = e.target as HTMLImageElement;
+                  if (target.src !== photo.url) {
+                    target.src = photo.url;
+                  }
+                }}
               />
             </button>
           ))}
