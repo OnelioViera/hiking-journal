@@ -33,6 +33,7 @@ interface EntryFormEntry {
   tags: string[];
   rating: number;
   privacy: string;
+  status: 'draft' | 'completed';
   photos: IPhoto[];
 }
 
@@ -81,7 +82,8 @@ export default function EntryForm({ entry }: EntryFormProps) {
     },
     tags: entry?.tags?.join(', ') || '',
     rating: entry?.rating || 3,
-    privacy: entry?.privacy || 'private'
+    privacy: entry?.privacy || 'private',
+    status: entry?.status || 'draft'
   });
 
   // Add state for hours and minutes
@@ -94,6 +96,14 @@ export default function EntryForm({ entry }: EntryFormProps) {
     console.log('Form data initialized:', formData);
   }, [entry, formData]);
 
+  // Convert HEIC URLs to JPEG for better browser compatibility
+  const convertHeicToJpeg = (url: string): string => {
+    if (url.includes('.heic')) {
+      return url.replace('.heic', '.jpg');
+    }
+    return url;
+  };
+
   const handleFileUpload = async (files: FileList) => {
     setUploadingPhotos(true);
     const uploadPromises = Array.from(files).map(async (file) => {
@@ -101,16 +111,24 @@ export default function EntryForm({ entry }: EntryFormProps) {
         const formData = new FormData();
         formData.append('file', file);
 
+        console.log('Uploading file:', file.name, file.type, file.size);
+
         const response = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
         });
 
+        console.log('Upload response status:', response.status);
+
         if (!response.ok) {
-          throw new Error('Upload failed');
+          const errorText = await response.text();
+          console.error('Upload failed:', errorText);
+          throw new Error(`Upload failed: ${errorText}`);
         }
 
         const result = await response.json();
+        console.log('Upload result:', result);
+        
         return {
           url: result.url,
           publicId: result.publicId,
@@ -136,6 +154,8 @@ export default function EntryForm({ entry }: EntryFormProps) {
 
     const uploadedPhotos = await Promise.all(uploadPromises);
     const validPhotos = uploadedPhotos.filter(photo => photo !== null) as IPhoto[];
+    
+    console.log('Valid photos after upload:', validPhotos);
     
     setPhotos(prev => [...prev, ...validPhotos]);
     setUploadingPhotos(false);
@@ -382,34 +402,51 @@ export default function EntryForm({ entry }: EntryFormProps) {
           <div className="mt-6">
             <h4 className="text-md font-semibold text-gray-700 mb-4">Uploaded Photos</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {photos.map((photo, index) => (
-                <div key={index} className="relative group">
-                  <div className="aspect-square rounded-lg overflow-hidden border">
-                    <Image
-                      src={photo.url}
-                      alt={`Photo ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      width={400}
-                      height={400}
-                      unoptimized
+              {photos.map((photo, index) => {
+                console.log('Rendering photo:', photo);
+                return (
+                  <div key={index} className="relative group">
+                    <div className="aspect-square rounded-lg overflow-hidden border">
+                      <Image
+                        src={convertHeicToJpeg(photo.url)}
+                        alt={`Photo ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        width={400}
+                        height={400}
+                        unoptimized
+                        onError={(e) => {
+                          console.error('Image failed to load:', photo.url, e);
+                          // Try to load the original URL as fallback
+                          const target = e.target as HTMLImageElement;
+                          if (target.src !== photo.url) {
+                            target.src = photo.url;
+                          } else {
+                            // If both fail, show a placeholder
+                            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDQwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMDAgMTUwQzE3NSA5MCAxMDAgMTI1IDEwMCAxNTBDMTAwIDE3NSAxMjUgMjAwIDE1MCAyMDBDMTc1IDIwMCAyMDAgMTc1IDIwMCAxNTBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMDAgMjUwQzEwMCAyNzUgMTI1IDMwMCAxNTAgMzAwQzE3NSAzMDAgMjAwIDI3NSAyMDAgMjUwQzIwMCAyMjUgMTc1IDIwMCAxNTAgMjAwQzEyNSAyMDAgMTAwIDIyNSAxMDAgMjUwWiIgZmlsbD0iIzlCOUJBQCIvPgo8L3N2Zz4K';
+                          }
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully:', photo.url);
+                        }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <input
+                      type="text"
+                      value={photo.caption || ''}
+                      onChange={(e) => updatePhotoCaption(index, e.target.value)}
+                      placeholder="Add caption..."
+                      className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-md text-sm"
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(index)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="text"
-                    value={photo.caption || ''}
-                    onChange={(e) => updatePhotoCaption(index, e.target.value)}
-                    placeholder="Add caption..."
-                    className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -758,6 +795,85 @@ export default function EntryForm({ entry }: EntryFormProps) {
         >
           Cancel
         </button>
+        
+        {/* Show Finish button for draft entries */}
+        {entry && formData.status === 'draft' && (
+          <button
+            type="button"
+            onClick={async () => {
+              setIsSubmitting(true);
+              const toastId = toast.loading('Marking entry as completed...', {
+                style: {
+                  background: '#3b82f6',
+                  color: '#fff',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                },
+              });
+              
+              try {
+                const response = await fetch(`/api/entries/${entry._id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ ...formData, status: 'completed' })
+                });
+
+                if (response.ok) {
+                  toast.dismiss(toastId);
+                  toast.success('Entry marked as completed!', {
+                    duration: 4000,
+                    style: {
+                      background: '#10b981',
+                      color: '#fff',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                    },
+                  });
+                  router.push('/entries');
+                } else {
+                  const error = await response.json();
+                  toast.dismiss(toastId);
+                  toast.error(`Error: ${error.message || 'Failed to update entry'}`, {
+                    duration: 4000,
+                    style: {
+                      background: '#ef4444',
+                      color: '#fff',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                    },
+                  });
+                }
+              } catch (error) {
+                console.error('Error updating entry:', error);
+                toast.dismiss(toastId);
+                toast.error('Failed to update entry. Please try again.', {
+                  duration: 4000,
+                  style: {
+                    background: '#ef4444',
+                    color: '#fff',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                  },
+                });
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            disabled={isSubmitting}
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? 'Finishing...' : 'Finish Hike'}
+          </button>
+        )}
+        
         <button
           type="submit"
           disabled={isSubmitting}

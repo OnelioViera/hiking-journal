@@ -45,6 +45,7 @@ export interface IJournalEntry extends Document {
   tags: string[];
   rating: number;
   privacy: 'public' | 'private';
+  status: 'draft' | 'completed'; // New field to track entry status
   createdAt: Date;
   updatedAt: Date;
 }
@@ -86,6 +87,7 @@ const journalEntrySchema = new Schema<IJournalEntry>({
   tags: [String],
   rating: { type: Number, min: 1, max: 5, default: 3 },
   privacy: { type: String, enum: ['public', 'private'], default: 'private' },
+  status: { type: String, enum: ['draft', 'completed'], default: 'draft' }, // Added status field
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

@@ -35,6 +35,7 @@ interface Entry {
   tags: string[];
   photos: IPhoto[];
   privacy: string;
+  status: 'draft' | 'completed';
 }
 
 export default function EditEntryPage({ params }: { params: Promise<{ id: string }> }) {

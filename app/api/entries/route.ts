@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const difficulty = searchParams.get('difficulty') || '';
     const tags = searchParams.get('tags') || '';
+    const status = searchParams.get('status') || '';
 
     const skip = (page - 1) * limit;
 
@@ -40,6 +41,10 @@ export async function GET(request: NextRequest) {
     if (tags) {
       const tagArray = tags.split(',').map(tag => tag.trim());
       query.tags = { $in: tagArray };
+    }
+
+    if (status) {
+      query.status = status;
     }
 
     const entries = await JournalEntry.find(query)

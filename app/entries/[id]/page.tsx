@@ -50,6 +50,7 @@ interface Entry {
   tags: string[];
   rating: number;
   privacy: string;
+  status: 'draft' | 'completed';
   photos: {
     url: string;
     publicId: string;
@@ -81,6 +82,14 @@ export default function EntryDetailPage() {
     } else {
       return `${mins}m`;
     }
+  };
+
+  // Convert HEIC URLs to JPEG for better browser compatibility
+  const convertHeicToJpeg = (url: string): string => {
+    if (url.includes('.heic')) {
+      return url.replace('.heic', '.jpg');
+    }
+    return url;
   };
 
   const fetchEntry = useCallback(async () => {
@@ -229,6 +238,80 @@ export default function EntryDetailPage() {
             </Link>
             
             <div className="flex space-x-3">
+              {entry.status === 'draft' && (
+                <button
+                  onClick={async () => {
+                    const toastId = toast.loading('Marking entry as completed...', {
+                      style: {
+                        background: '#3b82f6',
+                        color: '#fff',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                      },
+                    });
+                    
+                    try {
+                      const response = await fetch(`/api/entries/${entry._id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...entry, status: 'completed' })
+                      });
+
+                      if (response.ok) {
+                        toast.dismiss(toastId);
+                        toast.success('Entry marked as completed!', {
+                          duration: 4000,
+                          style: {
+                            background: '#10b981',
+                            color: '#fff',
+                            borderRadius: '12px',
+                            padding: '16px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                          },
+                        });
+                        // Refresh the page to show updated status
+                        window.location.reload();
+                      } else {
+                        const error = await response.json();
+                        toast.dismiss(toastId);
+                        toast.error(`Error: ${error.message || 'Failed to update entry'}`, {
+                          duration: 4000,
+                          style: {
+                            background: '#ef4444',
+                            color: '#fff',
+                            borderRadius: '12px',
+                            padding: '16px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                          },
+                        });
+                      }
+                    } catch (error) {
+                      console.error('Error updating entry:', error);
+                      toast.dismiss(toastId);
+                      toast.error('Failed to update entry. Please try again.', {
+                        duration: 4000,
+                        style: {
+                          background: '#ef4444',
+                          color: '#fff',
+                          borderRadius: '12px',
+                          padding: '16px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                        },
+                      });
+                    }
+                  }}
+                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  <Mountain className="h-4 w-4 mr-2" />
+                  Finish Hike
+                </button>
+              )}
+              
               <Link
                 href={`/entries/${entry._id}/edit`}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -249,7 +332,14 @@ export default function EntryDetailPage() {
           
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{entry.title}</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900">{entry.title}</h1>
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  entry.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {entry.status === 'completed' ? 'Completed' : 'Draft'}
+                </span>
+              </div>
               <div className="flex items-center text-gray-600 mb-4">
                 <Calendar className="h-4 w-4 mr-2" />
                 {new Date(entry.date).toLocaleDateString('en-US', {
@@ -437,7 +527,7 @@ export default function EntryDetailPage() {
                     >
                       <div className="aspect-square rounded-lg overflow-hidden border hover:scale-105 transition-transform duration-200">
                         <Image
-                          src={photo.url}
+                          src={convertHeicToJpeg(photo.url)}
                           alt={photo.caption || `Photo ${index + 1}`}
                           className="w-full h-full object-cover"
                           width={400}
@@ -486,6 +576,15 @@ export default function EntryDetailPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Stats</h2>
               
               <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Status</span>
+                  <span className={`font-semibold px-2 py-1 rounded text-sm ${
+                    entry.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {entry.status === 'completed' ? 'Completed' : 'Draft'}
+                  </span>
+                </div>
+                
                 {entry.trail.distance && (
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">Distance</span>

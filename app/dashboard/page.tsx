@@ -23,6 +23,7 @@ interface Entry {
   rating: number;
   tags: string[];
   photos: IPhoto[];
+  status: 'draft' | 'completed';
 }
 
 export default function DashboardPage() {
@@ -91,29 +92,32 @@ export default function DashboardPage() {
     const now = new Date();
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     
-    const totalHikes = entries.length;
-    const thisMonthHikes = entries.filter(entry => 
+    // Filter for completed entries only
+    const completedEntries = entries.filter(entry => entry.status === 'completed');
+    
+    const totalHikes = completedEntries.length;
+    const thisMonthHikes = completedEntries.filter(entry => 
       new Date(entry.date) >= thisMonth
     ).length;
     
-    const totalDistance = entries.reduce((sum, entry) => 
+    const totalDistance = completedEntries.reduce((sum, entry) => 
       sum + (entry.trail.distance || 0), 0
     );
     
-    const totalPhotos = entries.reduce((sum, entry) => 
+    const totalPhotos = completedEntries.reduce((sum, entry) => 
       sum + (entry.photos?.length || 0), 0
     );
 
     // Advanced analytics calculations
-    const totalElevation = entries.reduce((sum, entry) => 
+    const totalElevation = completedEntries.reduce((sum, entry) => 
       sum + (entry.trail.elevationGain || 0), 0
     );
     
     const averageDistance = totalHikes > 0 ? totalDistance / totalHikes : 0;
-    const averageRating = entries.reduce((sum, entry) => sum + entry.rating, 0) / totalHikes || 0;
+    const averageRating = completedEntries.reduce((sum, entry) => sum + entry.rating, 0) / totalHikes || 0;
     
     // Difficulty analysis
-    const difficultyCounts = entries.reduce((acc, entry) => {
+    const difficultyCounts = completedEntries.reduce((acc, entry) => {
       const difficulty = entry.trail.difficulty;
       acc[difficulty] = (acc[difficulty] || 0) + 1;
       return acc;
@@ -122,7 +126,7 @@ export default function DashboardPage() {
       .sort(([,a], [,b]) => b - a)[0]?.[0] || '';
     
     // Trail type analysis
-    const trailTypeCounts = entries.reduce((acc, entry) => {
+    const trailTypeCounts = completedEntries.reduce((acc, entry) => {
       if (entry.trail.type) {
         acc[entry.trail.type] = (acc[entry.trail.type] || 0) + 1;
       }
@@ -132,15 +136,15 @@ export default function DashboardPage() {
       .sort(([,a], [,b]) => b - a)[0]?.[0] || '';
     
     // Longest hike and highest elevation
-    const longestHike = Math.max(...entries.map(entry => entry.trail.distance || 0));
-    const highestElevation = Math.max(...entries.map(entry => entry.trail.elevationGain || 0));
+    const longestHike = Math.max(...completedEntries.map(entry => entry.trail.distance || 0));
+    const highestElevation = Math.max(...completedEntries.map(entry => entry.trail.elevationGain || 0));
     
     // Monthly trends (last 6 months)
     const monthlyTrends = [];
     for (let i = 5; i >= 0; i--) {
       const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-      const monthHikes = entries.filter(entry => {
+      const monthHikes = completedEntries.filter(entry => {
         const entryDate = new Date(entry.date);
         return entryDate >= month && entryDate < nextMonth;
       }).length;

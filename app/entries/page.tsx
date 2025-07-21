@@ -25,6 +25,7 @@ interface Entry {
   rating: number;
   tags: string[];
   photos: IPhoto[];
+  status: 'draft' | 'completed';
 }
 
 // Helper function to format duration
@@ -41,12 +42,21 @@ const formatDuration = (minutes: number) => {
   }
 };
 
+// Convert HEIC URLs to JPEG for better browser compatibility
+const convertHeicToJpeg = (url: string): string => {
+  if (url.includes('.heic')) {
+    return url.replace('.heic', '.jpg');
+  }
+  return url;
+};
+
 export default function EntriesPage() {
   const { isSignedIn, isLoaded } = useAuth();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [difficulty, setDifficulty] = useState('');
+  const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [deletingEntry, setDeletingEntry] = useState<string | null>(null);
@@ -59,7 +69,8 @@ export default function EntriesPage() {
         page: page.toString(),
         limit: '10',
         ...(search && { search }),
-        ...(difficulty && { difficulty })
+        ...(difficulty && { difficulty }),
+        ...(status && { status })
       });
 
       const response = await fetch(`/api/entries?${params}`);
@@ -73,7 +84,7 @@ export default function EntriesPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, difficulty, page]);
+  }, [search, difficulty, status, page]);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -245,6 +256,19 @@ export default function EntriesPage() {
                 <option value="expert">Expert</option>
               </select>
             </div>
+
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="">All Status</option>
+                <option value="draft">Draft</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -303,6 +327,12 @@ export default function EntriesPage() {
                     </p>
                     
                     <div className="flex flex-wrap items-center gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        entry.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {entry.status === 'completed' ? 'Completed' : 'Draft'}
+                      </span>
+                      
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         entry.trail.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
                         entry.trail.difficulty === 'moderate' ? 'bg-yellow-100 text-yellow-800' :
