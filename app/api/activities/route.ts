@@ -18,7 +18,9 @@ export async function GET(request: NextRequest) {
         // This is a valid API token
         console.log('Valid API token used:', token);
         
-        // Return comprehensive mock data for testing
+        // For API token auth, we'll return sample data for demonstration
+        // In production, you might want to map API tokens to specific users
+        // or allow access to all public data
         return NextResponse.json({
           data: [
             {
@@ -37,7 +39,17 @@ export async function GET(request: NextRequest) {
               mood: 'great',
               notes: 'Amazing views at the summit',
               photos: [],
-              tags: ['hiking', 'mountain', 'outdoors']
+              tags: ['hiking', 'mountain', 'outdoors'],
+              rating: 4,
+              trailType: 'out-and-back',
+              metadata: {
+                trailName: 'Mountain Trail',
+                coordinates: {},
+                elevation: 1200,
+                trailhead: 'Main Trailhead',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              }
             },
             {
               _id: 'activity_2',
@@ -55,7 +67,17 @@ export async function GET(request: NextRequest) {
               mood: 'good',
               notes: 'Relaxing afternoon walk',
               photos: [],
-              tags: ['hiking', 'riverside', 'easy']
+              tags: ['hiking', 'riverside', 'easy'],
+              rating: 3,
+              trailType: 'loop',
+              metadata: {
+                trailName: 'Riverside Trail',
+                coordinates: {},
+                elevation: 200,
+                trailhead: 'Riverside Park',
+                createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+                updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+              }
             },
             {
               _id: 'activity_3',
@@ -73,7 +95,17 @@ export async function GET(request: NextRequest) {
               mood: 'excellent',
               notes: 'Challenging but rewarding hike with great wildlife sightings',
               photos: [],
-              tags: ['hiking', 'forest', 'challenging', 'wildlife']
+              tags: ['hiking', 'forest', 'challenging', 'wildlife'],
+              rating: 5,
+              trailType: 'loop',
+              metadata: {
+                trailName: 'Forest Loop Trail',
+                coordinates: {},
+                elevation: 1800,
+                trailhead: 'Forest Entrance',
+                createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+                updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+              }
             },
             {
               _id: 'activity_4',
@@ -91,7 +123,17 @@ export async function GET(request: NextRequest) {
               mood: 'amazing',
               notes: 'Breathtaking ocean views and sea breeze',
               photos: [],
-              tags: ['hiking', 'coastal', 'scenic', 'ocean']
+              tags: ['hiking', 'coastal', 'scenic', 'ocean'],
+              rating: 4,
+              trailType: 'out-and-back',
+              metadata: {
+                trailName: 'Coastal Cliff Walk',
+                coordinates: {},
+                elevation: 400,
+                trailhead: 'Coastal Parking',
+                createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+              }
             }
           ]
         });
@@ -138,31 +180,38 @@ export async function GET(request: NextRequest) {
       .skip(skip)
       .limit(limit);
 
-    // Transform journal entries into activity format
+    // Transform journal entries into activity format for Health-First app compatibility
     const activities = entries.map(entry => ({
-      id: entry._id.toString(),
+      _id: entry._id.toString(),
       title: entry.title,
       description: entry.description,
       date: entry.date,
       duration: entry.trail.duration || 0, // in minutes
       distance: entry.trail.distance || 0, // in miles/km
-      type: 'hiking',
-      location: entry.location.name,
-      difficulty: entry.trail.difficulty,
-      elevationGain: entry.trail.elevationGain || 0,
-      trailType: entry.trail.type,
+      distanceUnit: 'miles', // Default unit
+      calories: Math.round((entry.trail.duration || 0) * 4.5), // Rough calorie estimate
+      elevation: {
+        gain: entry.trail.elevationGain || 0,
+        loss: entry.trail.elevationGain || 0 // Assuming similar loss
+      },
+      location: {
+        name: entry.location.name,
+        coordinates: entry.location.coordinates || {}
+      },
       weather: {
         temperature: entry.weather.temperature,
-        conditions: entry.weather.conditions,
-        windSpeed: entry.weather.windSpeed,
-        humidity: entry.weather.humidity
+        conditions: entry.weather.conditions || ''
       },
-      rating: entry.rating,
-      tags: entry.tags,
+      difficulty: entry.trail.difficulty || 'moderate',
+      mood: 'good', // Default mood since not stored in journal entries
+      notes: entry.description,
       photos: entry.photos.map((photo: { url: string; caption?: string }) => ({
         url: photo.url,
         caption: photo.caption
       })),
+      tags: entry.tags || [],
+      rating: entry.rating,
+      trailType: entry.trail.type,
       metadata: {
         trailName: entry.trail.name,
         coordinates: entry.location.coordinates,
@@ -177,7 +226,7 @@ export async function GET(request: NextRequest) {
     const pages = Math.ceil(total / limit);
 
     return NextResponse.json({
-      activities,
+      data: activities,
       pagination: {
         page,
         limit,
@@ -188,9 +237,9 @@ export async function GET(request: NextRequest) {
         totalActivities: total,
         totalDistance: activities.reduce((sum, activity) => sum + (activity.distance || 0), 0),
         totalDuration: activities.reduce((sum, activity) => sum + (activity.duration || 0), 0),
-        totalElevationGain: activities.reduce((sum, activity) => sum + (activity.elevationGain || 0), 0),
+        totalElevationGain: activities.reduce((sum, activity) => sum + (activity.elevation.gain || 0), 0),
         averageRating: activities.length > 0 
-          ? activities.reduce((sum, activity) => sum + activity.rating, 0) / activities.length 
+          ? activities.reduce((sum, activity) => sum + (activity.rating || 0), 0) / activities.length 
           : 0
       }
     });
@@ -217,20 +266,25 @@ export async function POST(request: NextRequest) {
       description: data.description,
       date: new Date(data.date),
       location: {
-        name: data.location || 'Unknown Location',
-        coordinates: data.coordinates,
-        elevation: data.elevation,
+        name: data.location?.name || data.location || 'Unknown Location',
+        coordinates: data.location?.coordinates || data.coordinates,
+        elevation: data.location?.elevation || data.elevation,
         trailhead: data.trailhead
       },
       trail: {
-        name: data.trailName,
+        name: data.trailName || data.metadata?.trailName,
         difficulty: data.difficulty || 'moderate',
         distance: data.distance,
         duration: data.duration,
-        elevationGain: data.elevationGain,
+        elevationGain: data.elevation?.gain || data.elevationGain,
         type: data.trailType || 'other'
       },
-      weather: data.weather || {},
+      weather: {
+        temperature: data.weather?.temperature,
+        conditions: data.weather?.conditions || '',
+        windSpeed: data.weather?.windSpeed,
+        humidity: data.weather?.humidity
+      },
       photos: data.photos || [],
       tags: data.tags || [],
       rating: data.rating || 3,
@@ -245,23 +299,38 @@ export async function POST(request: NextRequest) {
 
     await entry.save();
 
-    // Return the activity in the expected format
+    // Return the activity in the Health-First compatible format
     const activity = {
-      id: entry._id.toString(),
+      _id: entry._id.toString(),
       title: entry.title,
       description: entry.description,
       date: entry.date,
-      duration: entry.trail.duration,
-      distance: entry.trail.distance,
-      type: 'hiking',
-      location: entry.location.name,
-      difficulty: entry.trail.difficulty,
-      elevationGain: entry.trail.elevationGain,
-      trailType: entry.trail.type,
-      weather: entry.weather,
+      duration: entry.trail.duration || 0,
+      distance: entry.trail.distance || 0,
+      distanceUnit: 'miles',
+      calories: Math.round((entry.trail.duration || 0) * 4.5),
+      elevation: {
+        gain: entry.trail.elevationGain || 0,
+        loss: entry.trail.elevationGain || 0
+      },
+      location: {
+        name: entry.location.name,
+        coordinates: entry.location.coordinates || {}
+      },
+      weather: {
+        temperature: entry.weather.temperature,
+        conditions: entry.weather.conditions || ''
+      },
+      difficulty: entry.trail.difficulty || 'moderate',
+      mood: 'good',
+      notes: entry.description,
+      photos: entry.photos.map((photo: { url: string; caption?: string }) => ({
+        url: photo.url,
+        caption: photo.caption
+      })),
+      tags: entry.tags || [],
       rating: entry.rating,
-      tags: entry.tags,
-      photos: entry.photos,
+      trailType: entry.trail.type,
       metadata: {
         trailName: entry.trail.name,
         coordinates: entry.location.coordinates,

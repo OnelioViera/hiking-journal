@@ -27,31 +27,38 @@ export async function GET(
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
 
-    // Transform journal entry into activity format
+    // Transform journal entry into Health-First compatible format
     const activity = {
-      id: entry._id.toString(),
+      _id: entry._id.toString(),
       title: entry.title,
       description: entry.description,
       date: entry.date,
       duration: entry.trail.duration || 0,
       distance: entry.trail.distance || 0,
-      type: 'hiking',
-      location: entry.location.name,
-      difficulty: entry.trail.difficulty,
-      elevationGain: entry.trail.elevationGain || 0,
-      trailType: entry.trail.type,
+      distanceUnit: 'miles',
+      calories: Math.round((entry.trail.duration || 0) * 4.5),
+      elevation: {
+        gain: entry.trail.elevationGain || 0,
+        loss: entry.trail.elevationGain || 0
+      },
+      location: {
+        name: entry.location.name,
+        coordinates: entry.location.coordinates || {}
+      },
       weather: {
         temperature: entry.weather.temperature,
-        conditions: entry.weather.conditions,
-        windSpeed: entry.weather.windSpeed,
-        humidity: entry.weather.humidity
+        conditions: entry.weather.conditions || ''
       },
-      rating: entry.rating,
-      tags: entry.tags,
+      difficulty: entry.trail.difficulty || 'moderate',
+      mood: 'good',
+      notes: entry.description,
       photos: entry.photos.map((photo: { url: string; caption?: string }) => ({
         url: photo.url,
         caption: photo.caption
       })),
+      tags: entry.tags || [],
+      rating: entry.rating,
+      trailType: entry.trail.type,
       metadata: {
         trailName: entry.trail.name,
         coordinates: entry.location.coordinates,
@@ -90,20 +97,25 @@ export async function PUT(
       description: data.description,
       date: data.date ? new Date(data.date) : undefined,
       location: data.location ? {
-        name: data.location,
-        coordinates: data.coordinates,
-        elevation: data.elevation,
+        name: data.location.name || data.location,
+        coordinates: data.location.coordinates || data.coordinates,
+        elevation: data.location.elevation || data.elevation,
         trailhead: data.trailhead
       } : undefined,
       trail: {
-        name: data.trailName,
+        name: data.trailName || data.metadata?.trailName,
         difficulty: data.difficulty,
         distance: data.distance,
         duration: data.duration,
-        elevationGain: data.elevationGain,
+        elevationGain: data.elevation?.gain || data.elevationGain,
         type: data.trailType
       },
-      weather: data.weather,
+      weather: {
+        temperature: data.weather?.temperature,
+        conditions: data.weather?.conditions || '',
+        windSpeed: data.weather?.windSpeed,
+        humidity: data.weather?.humidity
+      },
       tags: data.tags,
       rating: data.rating,
       photos: data.photos
@@ -130,23 +142,38 @@ export async function PUT(
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
 
-    // Return the updated activity
+    // Return the updated activity in Health-First compatible format
     const activity = {
-      id: entry._id.toString(),
+      _id: entry._id.toString(),
       title: entry.title,
       description: entry.description,
       date: entry.date,
-      duration: entry.trail.duration,
-      distance: entry.trail.distance,
-      type: 'hiking',
-      location: entry.location.name,
-      difficulty: entry.trail.difficulty,
-      elevationGain: entry.trail.elevationGain,
-      trailType: entry.trail.type,
-      weather: entry.weather,
+      duration: entry.trail.duration || 0,
+      distance: entry.trail.distance || 0,
+      distanceUnit: 'miles',
+      calories: Math.round((entry.trail.duration || 0) * 4.5),
+      elevation: {
+        gain: entry.trail.elevationGain || 0,
+        loss: entry.trail.elevationGain || 0
+      },
+      location: {
+        name: entry.location.name,
+        coordinates: entry.location.coordinates || {}
+      },
+      weather: {
+        temperature: entry.weather.temperature,
+        conditions: entry.weather.conditions || ''
+      },
+      difficulty: entry.trail.difficulty || 'moderate',
+      mood: 'good',
+      notes: entry.description,
+      photos: entry.photos.map((photo: { url: string; caption?: string }) => ({
+        url: photo.url,
+        caption: photo.caption
+      })),
+      tags: entry.tags || [],
       rating: entry.rating,
-      tags: entry.tags,
-      photos: entry.photos,
+      trailType: entry.trail.type,
       metadata: {
         trailName: entry.trail.name,
         coordinates: entry.location.coordinates,
