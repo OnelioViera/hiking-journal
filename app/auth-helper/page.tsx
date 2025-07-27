@@ -4,20 +4,24 @@ import { useAuth, useUser } from '@clerk/nextjs';
 import { useState } from 'react';
 import { Copy, Check, AlertCircle, TestTube } from 'lucide-react';
 
+interface TestResult {
+  status: number | string;
+  data: Record<string, unknown>;
+}
+
 export default function AuthHelperPage() {
   const { isSignedIn, isLoaded, getToken } = useAuth();
   const { user } = useUser();
   const [token, setToken] = useState<string>('');
   const [copied, setCopied] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [testing, setTesting] = useState(false);
 
   const generateToken = async () => {
     try {
       const sessionToken = await getToken();
       setToken(sessionToken || 'No token available');
-    } catch (error) {
-      console.error('Error getting token:', error);
+    } catch {
       setToken('Error getting token');
     }
   };
@@ -44,7 +48,7 @@ export default function AuthHelperPage() {
         status: response.status,
         data: result
       });
-    } catch (error) {
+    } catch {
       setTestResult({
         status: 'error',
         data: { error: 'Network error' }
@@ -68,7 +72,7 @@ export default function AuthHelperPage() {
         status: response.status,
         data: result
       });
-    } catch (error) {
+    } catch {
       setTestResult({
         status: 'error',
         data: { error: 'Network error' }
@@ -223,7 +227,7 @@ export default function AuthHelperPage() {
           <div className="space-y-4 text-blue-800">
             <div>
               <h4 className="font-medium">1. Generate Token</h4>
-              <p className="text-sm">Click "Generate Session Token" to get your authentication token.</p>
+              <p className="text-sm">Click &quot;Generate Session Token&quot; to get your authentication token.</p>
             </div>
             
             <div>
