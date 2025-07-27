@@ -42,14 +42,6 @@ const formatDuration = (minutes: number) => {
   }
 };
 
-// Convert HEIC URLs to JPEG for better browser compatibility
-const convertHeicToJpeg = (url: string): string => {
-  if (url.includes('.heic')) {
-    return url.replace('.heic', '.jpg');
-  }
-  return url;
-};
-
 export default function EntriesPage() {
   const { isSignedIn, isLoaded } = useAuth();
   const [entries, setEntries] = useState<Entry[]>([]);

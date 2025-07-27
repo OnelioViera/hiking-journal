@@ -1,12 +1,12 @@
 'use client';
 
 import { useAuth } from '@clerk/nextjs';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Activity, BarChart3, FileText, Heart, Zap } from 'lucide-react';
 
 interface ApiResponse {
   status: string;
-  data?: any;
+  data?: unknown;
   error?: string;
 }
 
@@ -29,14 +29,14 @@ export default function ApiTestPage() {
       } else {
         setState({ status: 'error', error: data.error || 'Request failed' });
       }
-    } catch (error) {
+    } catch (err) {
       setState({ status: 'error', error: 'Network error' });
     } finally {
       setLoading(false);
     }
   };
 
-  const runAllTests = async () => {
+  const runAllTests = useCallback(async () => {
     setLoading(true);
     
     // Test health endpoint
@@ -50,13 +50,13 @@ export default function ApiTestPage() {
     
     // Test docs endpoint
     await testEndpoint('/api/activities/docs', setDocs);
-  };
+  }, []);
 
   useEffect(() => {
     if (isSignedIn) {
       runAllTests();
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, runAllTests]);
 
   if (!isLoaded) {
     return (
@@ -121,7 +121,7 @@ export default function ApiTestPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">API Test Dashboard</h1>
           <p className="text-gray-600 mb-6">
-            Test the hiking journal API endpoints and verify they're working correctly.
+            Test the hiking journal API endpoints and verify they&apos;re working correctly.
           </p>
           
           <button

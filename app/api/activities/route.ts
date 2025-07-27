@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
-    const type = searchParams.get('type') || 'hiking';
 
     const skip = (page - 1) * limit;
 
