@@ -1,12 +1,12 @@
 {
   "functions": {
-    "app/api/activities/public/route.ts": {
+    "app/api/activities/route.ts": {
       "maxDuration": 10
     }
   },
   "headers": [
     {
-      "source": "/api/activities/public",
+      "source": "/api/activities",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
