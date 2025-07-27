@@ -11,6 +11,7 @@ A modern web application for documenting hiking adventures and outdoor experienc
 - **Responsive Design**: Works perfectly on desktop and mobile
 - **Interactive Maps**: View and plot hiking locations
 - **Statistics Dashboard**: Track your hiking progress
+- **API Integration**: Complete REST API for external app integration
 
 ## 🚀 Quick Start
 
@@ -46,6 +47,9 @@ CLOUDINARY_API_SECRET=your_api_secret
 
 # Mapbox
 NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=your_mapbox_token
+
+# App URL (for API documentation)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 ### 4. Set Up External Services
@@ -86,12 +90,24 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 hiking-journal/
 ├── app/
 │   ├── api/
+│   │   ├── activities/
+│   │   │   ├── route.ts
+│   │   │   ├── [id]/
+│   │   │   │   └── route.ts
+│   │   │   ├── summary/
+│   │   │   │   └── route.ts
+│   │   │   └── docs/
+│   │   │       └── route.ts
 │   │   ├── entries/
 │   │   │   ├── route.ts
 │   │   │   └── [id]/
 │   │   │       └── route.ts
+│   │   ├── health/
+│   │   │   └── route.ts
 │   │   └── upload/
 │   │       └── route.ts
+│   ├── api-test/
+│   │   └── page.tsx
 │   ├── entries/
 │   │   ├── page.tsx
 │   │   ├── new/
@@ -120,6 +136,86 @@ hiking-journal/
 └── public/
 ```
 
+## 🔌 API Integration
+
+The Hiking Journal app provides a complete REST API that allows other applications to access hiking data. This enables integration with health tracking apps, fitness platforms, and other outdoor applications.
+
+### API Endpoints
+
+#### Core Endpoints
+- `GET /api/activities` - List hiking activities
+- `GET /api/activities/{id}` - Get specific activity
+- `POST /api/activities` - Create new activity
+- `PUT /api/activities/{id}` - Update activity
+- `DELETE /api/activities/{id}` - Delete activity
+
+#### Utility Endpoints
+- `GET /api/activities/summary` - Get aggregated statistics
+- `GET /api/activities/docs` - API documentation
+- `GET /api/health` - Health check
+
+### Authentication
+
+All API endpoints require authentication via Clerk. Include the user's session token in the Authorization header.
+
+### Data Format
+
+Activities are automatically transformed from journal entries with the following structure:
+
+```json
+{
+  "id": "activity_id",
+  "title": "Hike Title",
+  "description": "Hike description",
+  "date": "2024-01-15T10:00:00.000Z",
+  "duration": 180,
+  "distance": 5.2,
+  "type": "hiking",
+  "location": "Trail Name",
+  "difficulty": "moderate",
+  "elevationGain": 800,
+  "trailType": "out-and-back",
+  "weather": {
+    "temperature": 65,
+    "conditions": "sunny",
+    "windSpeed": 10,
+    "humidity": 45
+  },
+  "rating": 4,
+  "tags": ["scenic", "wildlife"],
+  "photos": [...],
+  "metadata": {...}
+}
+```
+
+### Testing the API
+
+Visit `/api-test` in your browser to test all API endpoints and verify they're working correctly.
+
+### Integration Examples
+
+#### Health Tracking App Integration
+```javascript
+// Fetch user's hiking activities
+const response = await fetch('/api/activities?limit=50', {
+  headers: {
+    'Authorization': 'Bearer user_session_token'
+  }
+});
+const activities = await response.json();
+```
+
+#### Statistics Integration
+```javascript
+// Get monthly hiking statistics
+const response = await fetch('/api/activities/summary?period=month', {
+  headers: {
+    'Authorization': 'Bearer user_session_token'
+  }
+});
+const stats = await response.json();
+```
+
 ## 🔧 Core Features
 
 ### Authentication
@@ -142,6 +238,12 @@ hiking-journal/
 - User model with preferences
 - Journal Entry model with comprehensive hiking data
 - Proper TypeScript interfaces
+
+### API Integration
+- RESTful API design
+- Comprehensive activity data transformation
+- Real-time statistics and trends
+- Health monitoring and documentation
 
 ## 🎨 UI Components
 
@@ -168,6 +270,7 @@ hiking-journal/
 - Secure file uploads
 - Environment variable protection
 - CORS configuration
+- API rate limiting
 
 ## 🧪 Testing
 
@@ -177,6 +280,10 @@ npm test
 
 # Run tests with coverage
 npm run test:coverage
+
+# Test API endpoints
+npm run dev
+# Then visit http://localhost:3000/api-test
 ```
 
 ## 🚀 Deployment
@@ -199,6 +306,7 @@ Make sure to set all the environment variables in your production environment:
 - `CLOUDINARY_API_KEY`
 - `CLOUDINARY_API_SECRET`
 - `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN`
+- `NEXT_PUBLIC_APP_URL`
 
 ## 📱 Key Features to Implement
 
@@ -208,6 +316,7 @@ Make sure to set all the environment variables in your production environment:
 - [x] Photo upload and management
 - [x] Basic search and filtering
 - [x] Responsive design
+- [x] API integration for external apps
 
 ### Phase 2: Enhanced Features
 - [ ] Interactive maps with trail plotting
@@ -238,17 +347,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [Next.js](https://nextjs.org/) for the amazing framework
-- [Tailwind CSS](https://tailwindcss.com/) for the utility-first CSS framework
-- [Clerk](https://clerk.com/) for authentication services
-- [MongoDB Atlas](https://www.mongodb.com/atlas) for the database service
+- [Clerk](https://clerk.com/) for authentication
+- [MongoDB](https://www.mongodb.com/) for the database
 - [Cloudinary](https://cloudinary.com/) for image management
-- [Mapbox](https://www.mapbox.com/) for mapping services
-- [Lucide React](https://lucide.dev/) for beautiful icons
-
-## 📞 Support
-
-If you have any questions or need help, please open an issue on GitHub or contact the development team.
-
----
-
-**Happy hiking and coding! 🏔️✨**
+- [Tailwind CSS](https://tailwindcss.com/) for styling
