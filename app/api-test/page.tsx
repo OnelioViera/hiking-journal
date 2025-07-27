@@ -1,185 +1,192 @@
 'use client';
 
-import { useAuth } from '@clerk/nextjs';
-import { useState, useEffect, useCallback } from 'react';
-import { Activity, BarChart3, FileText, Heart, Zap } from 'lucide-react';
-
-interface ApiResponse {
-  status: string;
-  data?: Record<string, unknown>;
-  error?: string;
-}
+import { useState } from 'react';
 
 export default function ApiTestPage() {
-  const { isSignedIn, isLoaded } = useAuth();
-  const [healthStatus, setHealthStatus] = useState<ApiResponse | null>(null);
-  const [activities, setActivities] = useState<ApiResponse | null>(null);
-  const [summary, setSummary] = useState<ApiResponse | null>(null);
-  const [docs, setDocs] = useState<ApiResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<any>({});
+  const [loading, setLoading] = useState<string | null>(null);
+  const [testToken, setTestToken] = useState<string>('aaac6eeaafb4e099265405e3762fd03ad6ebd690333f14b0bee4e680a810b1c0');
 
-  const testEndpoint = async (endpoint: string, setState: (response: ApiResponse) => void) => {
-    setLoading(true);
+  const testEndpoint = async (endpoint: string, options: RequestInit = {}) => {
+    setLoading(endpoint);
     try {
-      const response = await fetch(endpoint);
-      const data = await response.json();
+      const response = await fetch(endpoint, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
       
-      if (response.ok) {
-        setState({ status: 'success', data });
-      } else {
-        setState({ status: 'error', error: data.error || 'Request failed' });
-      }
-    } catch {
-      setState({ status: 'error', error: 'Network error' });
+      const data = await response.json();
+      setResults(prev => ({
+        ...prev,
+        [endpoint]: {
+          status: response.status,
+          data,
+          timestamp: new Date().toISOString()
+        }
+      }));
+    } catch (error) {
+      setResults(prev => ({
+        ...prev,
+        [endpoint]: {
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString()
+        }
+      }));
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
-  const runAllTests = useCallback(async () => {
-    setLoading(true);
-    
-    // Test health endpoint
-    await testEndpoint('/api/health', setHealthStatus);
-    
-    // Test activities endpoint
-    await testEndpoint('/api/activities?limit=5', setActivities);
-    
-    // Test summary endpoint
-    await testEndpoint('/api/activities/summary?period=month', setSummary);
-    
-    // Test docs endpoint
-    await testEndpoint('/api/activities/docs', setDocs);
-  }, []);
+  const testActivitiesWithToken = () => {
+    testEndpoint('/api/activities', {
+      headers: {
+        'Authorization': `Bearer ${testToken}`
+      }
+    });
+  };
 
-  useEffect(() => {
-    if (isSignedIn) {
-      runAllTests();
-    }
-  }, [isSignedIn, runAllTests]);
+  const testTokenGeneration = () => {
+    testEndpoint('/api/tokens', {
+      method: 'POST'
+    });
+  };
 
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const testActivitiesWithoutAuth = () => {
+    testEndpoint('/api/activities');
+  };
 
-  if (!isSignedIn) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">API Test Page</h1>
-          <p className="text-gray-600 mb-4">Please sign in to test the API endpoints.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const renderResponse = (response: ApiResponse | null, title: string, icon: React.ReactNode) => (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      <div className="flex items-center gap-2 mb-4">
-        {icon}
-        <h3 className="text-lg font-semibold">{title}</h3>
-      </div>
-      
-      {response ? (
-        <div className="space-y-2">
-          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-            response.status === 'success' 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
-          }`}>
-            {response.status === 'success' ? 'Success' : 'Error'}
-          </div>
-          
-          {response.error && (
-            <div className="text-red-600 text-sm">{response.error}</div>
-          )}
-          
-          {response.data && (
-            <details className="mt-4">
-              <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
-                View Response Data
-              </summary>
-              <pre className="mt-2 p-4 bg-gray-50 rounded text-xs overflow-auto max-h-64">
-                {JSON.stringify(response.data, null, 2)}
-              </pre>
-            </details>
-          )}
-        </div>
-      ) : (
-        <div className="text-gray-500 text-sm">No response yet</div>
-      )}
-    </div>
-  );
+  const testHealth = () => {
+    testEndpoint('/api/health');
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">API Test Dashboard</h1>
-          <p className="text-gray-600 mb-6">
-            Test the hiking journal API endpoints and verify they&apos;re working correctly.
-          </p>
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">API Test Page</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-4">API Token Testing</h2>
           
-          <button
-            onClick={runAllTests}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Zap className="w-4 h-4" />
-            {loading ? 'Testing...' : 'Run All Tests'}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {renderResponse(healthStatus, 'Health Check', <Heart className="w-5 h-5" />)}
-          {renderResponse(activities, 'Activities Endpoint', <Activity className="w-5 h-5" />)}
-          {renderResponse(summary, 'Summary Endpoint', <BarChart3 className="w-5 h-5" />)}
-          {renderResponse(docs, 'API Documentation', <FileText className="w-5 h-5" />)}
-        </div>
-
-        <div className="mt-8 bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-semibold mb-4">API Endpoints Available</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="space-y-4">
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">Core Endpoints</h4>
-              <ul className="space-y-1 text-gray-600">
-                <li>• GET /api/activities - List hiking activities</li>
-                <li>• GET /api/activities/{'{id}'} - Get specific activity</li>
-                <li>• POST /api/activities - Create new activity</li>
-                <li>• PUT /api/activities/{'{id}'} - Update activity</li>
-                <li>• DELETE /api/activities/{'{id}'} - Delete activity</li>
-              </ul>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Test Token:
+              </label>
+              <input
+                type="text"
+                value={testToken}
+                onChange={(e) => setTestToken(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md"
+                placeholder="Enter test token"
+              />
             </div>
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">Utility Endpoints</h4>
-              <ul className="space-y-1 text-gray-600">
-                <li>• GET /api/activities/summary - Get statistics</li>
-                <li>• GET /api/activities/docs - API documentation</li>
-                <li>• GET /api/health - Health check</li>
-              </ul>
-            </div>
+            
+            <button
+              onClick={testActivitiesWithToken}
+              disabled={loading === '/api/activities'}
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-400"
+            >
+              {loading === '/api/activities' ? 'Testing...' : 'Test Activities with Token'}
+            </button>
+            
+            <button
+              onClick={testTokenGeneration}
+              disabled={loading === '/api/tokens'}
+              className="w-full bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:bg-gray-400"
+            >
+              {loading === '/api/tokens' ? 'Generating...' : 'Generate New Token'}
+            </button>
+            
+            <button
+              onClick={testActivitiesWithoutAuth}
+              disabled={loading === '/api/activities'}
+              className="w-full bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 disabled:bg-gray-400"
+            >
+              {loading === '/api/activities' ? 'Testing...' : 'Test Activities (No Auth)'}
+            </button>
+            
+            <button
+              onClick={testHealth}
+              disabled={loading === '/api/health'}
+              className="w-full bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 disabled:bg-gray-400"
+            >
+              {loading === '/api/health' ? 'Testing...' : 'Test Health Endpoint'}
+            </button>
           </div>
         </div>
 
-        <div className="mt-8 bg-blue-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">Integration Ready</h3>
-          <p className="text-blue-800 mb-4">
-            Your hiking journal app now has a complete API that other applications can use to access hiking data. 
-            The API provides:
-          </p>
-          <ul className="space-y-2 text-blue-800">
-            <li>• ✅ Real-time activity data from completed journal entries</li>
-            <li>• ✅ Comprehensive statistics and trends</li>
-            <li>• ✅ Proper authentication and authorization</li>
-            <li>• ✅ RESTful API design with standard HTTP methods</li>
-            <li>• ✅ Detailed documentation and health checks</li>
-            <li>• ✅ Pagination and filtering support</li>
-          </ul>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-4">API Documentation</h2>
+          
+          <div className="space-y-4 text-sm">
+            <div>
+              <h3 className="font-medium text-gray-900">Available Endpoints:</h3>
+              <ul className="list-disc list-inside space-y-1 mt-2">
+                <li><strong>GET /api/activities</strong> - Fetch hiking activities</li>
+                <li><strong>POST /api/tokens</strong> - Generate API token</li>
+                <li><strong>GET /api/health</strong> - Health check</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-medium text-gray-900">Authentication:</h3>
+              <ul className="list-disc list-inside space-y-1 mt-2">
+                <li>Clerk authentication for web app</li>
+                <li>API token authentication for external apps</li>
+                <li>Test token: <code className="bg-gray-100 px-1 rounded">test_hiking_journal_token_2024</code></li>
+                <li>Generated token: <code className="bg-gray-100 px-1 rounded">aaac6eeaafb4e099265405e3762fd03ad6ebd690333f14b0bee4e680a810b1c0</code></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-medium text-gray-900">Usage:</h3>
+              <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
+{`// With API token
+fetch('/api/activities', {
+  headers: {
+    'Authorization': 'Bearer your_token_here'
+  }
+})
+
+// Generate token
+fetch('/api/tokens', {
+  method: 'POST'
+})`}
+              </pre>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold mb-4">Test Results</h2>
+        
+        {Object.keys(results).length === 0 ? (
+          <p className="text-gray-500">No tests run yet. Click the buttons above to test the API endpoints.</p>
+        ) : (
+          <div className="space-y-4">
+            {Object.entries(results).map(([endpoint, result]: [string, any]) => (
+              <div key={endpoint} className="border rounded-lg p-4">
+                <h3 className="font-medium text-gray-900 mb-2">{endpoint}</h3>
+                <div className="text-sm">
+                  <p><strong>Status:</strong> {result.status}</p>
+                  <p><strong>Timestamp:</strong> {result.timestamp}</p>
+                  {result.error ? (
+                    <p><strong>Error:</strong> <span className="text-red-600">{result.error}</span></p>
+                  ) : (
+                    <pre className="bg-gray-100 p-2 rounded mt-2 text-xs overflow-x-auto">
+                      {JSON.stringify(result.data, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

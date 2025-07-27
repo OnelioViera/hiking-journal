@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth, SignInButton, SignOutButton, UserButton } from '@clerk/nextjs';
-import { Mountain, Menu, X, Home } from 'lucide-react';
+import { Mountain, Menu, X, Home, Settings } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Header() {
@@ -51,6 +51,14 @@ export default function Header() {
                   style={{ fontWeight: 500 }}
                 >
                   New Entry
+                </Link>
+                <Link 
+                  href="/settings" 
+                  className="text-gray-600 hover:text-green-600 transition-colors nav-item"
+                  style={{ fontWeight: 500 }}
+                >
+                  <Settings className="h-4 w-4 inline mr-1" />
+                  Settings
                 </Link>
               </>
             )}
@@ -129,6 +137,15 @@ export default function Header() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     New Entry
+                  </Link>
+                  <Link 
+                    href="/settings" 
+                    className="text-gray-600 hover:text-green-600 transition-colors nav-item"
+                    style={{ fontWeight: 500 }}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Settings className="h-4 w-4 inline mr-1" />
+                    Settings
                   </Link>
                 </>
               )}
