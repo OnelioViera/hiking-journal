@@ -2,8 +2,19 @@
 
 import { useState } from 'react';
 
+interface TestResult {
+  status: number | string;
+  data?: unknown;
+  error?: string;
+  timestamp: string;
+}
+
+interface ApiResults {
+  [endpoint: string]: TestResult;
+}
+
 export default function ApiTestPage() {
-  const [results, setResults] = useState<any>({});
+  const [results, setResults] = useState<ApiResults>({});
   const [loading, setLoading] = useState<string | null>(null);
   const [testToken, setTestToken] = useState<string>('aaac6eeaafb4e099265405e3762fd03ad6ebd690333f14b0bee4e680a810b1c0');
 
@@ -169,7 +180,7 @@ fetch('/api/tokens', {
           <p className="text-gray-500">No tests run yet. Click the buttons above to test the API endpoints.</p>
         ) : (
           <div className="space-y-4">
-            {Object.entries(results).map(([endpoint, result]: [string, any]) => (
+            {Object.entries(results).map(([endpoint, result]: [string, TestResult]) => (
               <div key={endpoint} className="border rounded-lg p-4">
                 <h3 className="font-medium text-gray-900 mb-2">{endpoint}</h3>
                 <div className="text-sm">

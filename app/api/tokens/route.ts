@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { randomBytes } from 'crypto';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const { userId } = await auth();
     if (!userId) {
