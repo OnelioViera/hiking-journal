@@ -25,13 +25,14 @@ export async function GET(request: NextRequest) {
 
     // Date filtering based on period or custom date range
     if (startDate || endDate) {
-      query.date = {};
+      const dateQuery: Record<string, unknown> = {};
       if (startDate) {
-        query.date.$gte = new Date(startDate);
+        dateQuery.$gte = new Date(startDate);
       }
       if (endDate) {
-        query.date.$lte = new Date(endDate);
+        dateQuery.$lte = new Date(endDate);
       }
+      query.date = dateQuery;
     } else if (period !== 'all') {
       const now = new Date();
       let startDateFilter: Date;
@@ -136,7 +137,7 @@ export async function GET(request: NextRequest) {
 
     // Top locations (most visited)
     const topLocations = Object.entries(locationStats)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([,a], [,b]) => (b as number) - (a as number))
       .slice(0, 5)
       .map(([location, count]) => ({ location, count }));
 

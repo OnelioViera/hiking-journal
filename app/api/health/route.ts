@@ -7,7 +7,29 @@ export async function GET() {
   try {
     const { userId } = await auth();
     
-    const healthStatus = {
+    const healthStatus: {
+      status: string;
+      timestamp: string;
+      version: string;
+      services: {
+        authentication: string;
+        database: string;
+        api: string;
+      };
+      features: {
+        activities: string;
+        summary: string;
+        documentation: string;
+      };
+      authentication: {
+        authenticated: boolean;
+        userId: string | null;
+      };
+      user?: {
+        hasActivities: boolean;
+        totalActivities: number;
+      };
+    } = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       version: '1.0.0',

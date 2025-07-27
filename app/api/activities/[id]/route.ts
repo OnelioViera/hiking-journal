@@ -48,7 +48,7 @@ export async function GET(
       },
       rating: entry.rating,
       tags: entry.tags,
-      photos: entry.photos.map(photo => ({
+      photos: entry.photos.map((photo: { url: string; caption?: string }) => ({
         url: photo.url,
         caption: photo.caption
       })),

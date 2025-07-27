@@ -6,7 +6,7 @@ import { Activity, BarChart3, FileText, Heart, Zap } from 'lucide-react';
 
 interface ApiResponse {
   status: string;
-  data?: unknown;
+  data?: Record<string, unknown>;
   error?: string;
 }
 

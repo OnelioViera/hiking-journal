@@ -28,13 +28,14 @@ export async function GET(request: NextRequest) {
 
     // Date range filtering
     if (startDate || endDate) {
-      query.date = {};
+      const dateQuery: Record<string, unknown> = {};
       if (startDate) {
-        query.date.$gte = new Date(startDate);
+        dateQuery.$gte = new Date(startDate);
       }
       if (endDate) {
-        query.date.$lte = new Date(endDate);
+        dateQuery.$lte = new Date(endDate);
       }
+      query.date = dateQuery;
     }
 
     const entries = await JournalEntry.find(query)
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
       },
       rating: entry.rating,
       tags: entry.tags,
-      photos: entry.photos.map(photo => ({
+      photos: entry.photos.map((photo: { url: string; caption?: string }) => ({
         url: photo.url,
         caption: photo.caption
       })),
