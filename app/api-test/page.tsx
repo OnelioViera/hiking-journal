@@ -29,7 +29,7 @@ export default function ApiTestPage() {
       } else {
         setState({ status: 'error', error: data.error || 'Request failed' });
       }
-    } catch (err) {
+    } catch {
       setState({ status: 'error', error: 'Network error' });
     } finally {
       setLoading(false);
